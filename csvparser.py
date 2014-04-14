@@ -67,6 +67,32 @@ class DataRow(dict):
                 
         return candidates
     
+    def votes(self, year):
+        """Return the number of votes gained by each party in the given year."""
+        
+        votes = {}
+        if year == 2005:
+            cell_key = self.votes_2005_cells
+            total_cell = "Totvt05"
+        elif year == 2010:
+            cell_key = self.votes_2010_cells
+            total_cell = "Elec10"
+        else:
+            assert False, "Invalid year requested for votes: {0}".format(year)
+            
+        for party in cell_key.keys():
+            numvotes = self[self.cell_key[party]]
+            if numvotes is not None:
+                numvotes = int(numvotes.replace(",",""))
+            
+            votes[party] = numvotes
+        
+        # Calculate the number of votes for unlisted parties.    
+        total_votes = self[total_cell].replace(",","")
+        votes[OTH] = total_votes - sum(votes.values())
+            
+        return votes
+    
 
 def csv_to_dicts(filename):
     """Function to convert a CSV file into a list of DataRows, each holding
@@ -85,7 +111,10 @@ def csv_to_dicts(filename):
             row_dict = DataRow()
             for ii in range(len(row)):
                 row_dict[headers[ii]] = row[ii]
-            rows.append(row_dict)
+            
+            # Include only constituencies that were contested in 2010.
+            if row_dict["Win10"] is not None:
+                rows.append(row_dict)   
             
     return rows
     

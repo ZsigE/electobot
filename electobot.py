@@ -16,7 +16,7 @@ import cPickle as pickle
 # Electobot imports
 import csvparser
 from constants import *
-import candidate
+from candidate import Candidate
 
 # Constants
 
@@ -42,17 +42,11 @@ class Election(object):
         for row in rows:
             const = row["Seat"]
             candidates = row.candidates()
-            votes = row[5]
-            # row[6] is vote %, so skip it
-            incumbent = row[7]
-            # Nothing interesting in the next few fields
-            turnout = row[11]
-            change = row[12]
-            swing_lab_con = row[13]
-            swing_con_ld = row[14]
-            swing_lab_ld = row[15]
-            swing_holder_winner = row[16]
-            
+            votes_2005 = row.votes(2005)
+            votes_2010 = row.votes(2010)
+            turnout_2005 = float(row["Turn05"])
+            turnout_2010 = float(row["Turn10"])
+
             # All the data is now split out, so pack it into structures.
             if const not in self.constituencies:
                 constituency = Constituency(const)
