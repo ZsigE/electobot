@@ -4,13 +4,19 @@ Electobot
 by Philip Brien (http://github.com/ZsigE)
 
 Analysis and prediction tool based on the 2010 UK General Election results
+
+Main module and data structures
 """
 
-# Imports
-import csv
+# Python imports
 import optparse
 import os
 import cPickle as pickle
+
+# Electobot imports
+import csvparser
+from constants import *
+import candidate
 
 # Constants
 
@@ -30,55 +36,49 @@ class Election(object):
     def populate_from_csv(self, csv_filename):
         """Create an Election from saved election data in CSV format."""
         
-        # Run through the CSV file line by line, extracting the data.
-        with open(csv_filename, "rb") as csv_file:
-            reader = csv.reader(csv_file)
+        # Extract all the information from the CSV file.
+        rows = csvparser.csv_to_dicts(csv_filename)
+           
+        for row in rows:
+            const = row["Seat"]
+            candidates = row.candidates()
+            votes = row[5]
+            # row[6] is vote %, so skip it
+            incumbent = row[7]
+            # Nothing interesting in the next few fields
+            turnout = row[11]
+            change = row[12]
+            swing_lab_con = row[13]
+            swing_con_ld = row[14]
+            swing_lab_ld = row[15]
+            swing_holder_winner = row[16]
             
-            # Skip the first line, as this is the header row.
-            reader.next()
+            # All the data is now split out, so pack it into structures.
+            if const not in self.constituencies:
+                constituency = Constituency(const)
+                self.constituencies[const] = constituency
+            else:
+                constituency = self.constituencies[const]
+                
+            is_incumbent = True if incumbent == "*" else False
+            votes_num = int(votes.replace(",", ""))
+            if party not in self.parties:
+                party_obj = Party(party)
+                self.parties[party] = party_obj
+            else:
+                party_obj = self.parties[party]
+            cand_obj = Candidate(candidate,
+                                 party_obj, 
+                                 votes_num, 
+                                 is_incumbent)
+            constituency.race.candidates[candidate] = cand_obj
             
-            for row in reader:
-                # First two fields are indices, start at row[2]
-                const = row[2]
-                candidate = row[3]
-                party = row[4]
-                votes = row[5]
-                # row[6] is vote %, so skip it
-                incumbent = row[7]
-                # Nothing interesting in the next few fields
-                turnout = row[11]
-                change = row[12]
-                swing_lab_con = row[13]
-                swing_con_ld = row[14]
-                swing_lab_ld = row[15]
-                swing_holder_winner = row[16]
-                
-                # All the data is now split out, so pack it into structures.
-                if const not in self.constituencies:
-                    constituency = Constituency(const)
-                    self.constituencies[const] = constituency
-                else:
-                    constituency = self.constituencies[const]
-                    
-                is_incumbent = True if incumbent == "*" else False
-                votes_num = int(votes.replace(",", ""))
-                if party not in self.parties:
-                    party_obj = Party(party)
-                    self.parties[party] = party_obj
-                else:
-                    party_obj = self.parties[party]
-                cand_obj = Candidate(candidate,
-                                     party_obj, 
-                                     votes_num, 
-                                     is_incumbent)
-                constituency.race.candidates[candidate] = cand_obj
-                
-                constituency.race.turnout = float(turnout)
-                constituency.race.change = change
-                constituency.race.swing_lab_con = swing_lab_con
-                constituency.race.swing_con_ld = swing_con_ld
-                constituency.race.swing_lab_ld = swing_lab_ld
-                constituency.race.swing_holder_winner = swing_holder_winner
+            constituency.race.turnout = float(turnout)
+            constituency.race.change = change
+            constituency.race.swing_lab_con = swing_lab_con
+            constituency.race.swing_con_ld = swing_con_ld
+            constituency.race.swing_lab_ld = swing_lab_ld
+            constituency.race.swing_holder_winner = swing_holder_winner
                 
         return    
                     
@@ -120,20 +120,6 @@ class Party(object):
         """Constructor.  Store just the name."""
         
         self.name = name
-        
-        return
-
-
-class Candidate(object):
-    """Candidate for a seat."""
-    
-    def __init__(self, name, party, votes, incumbent):
-        """Constructor.  Store relevant information."""
-        
-        self.name = name
-        self.party = party
-        self.votes = votes
-        self.incumbent = incumbent
         
         return
     
