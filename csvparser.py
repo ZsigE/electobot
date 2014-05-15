@@ -10,9 +10,13 @@ CSV parser
 
 # Python imports
 import csv
+import logging
 
 # Electobot imports
 from constants import *
+
+# Set up logging
+logger = logging.getLogger("electobot.csvparser")
 
 # Classes
 class DataRow(dict):
@@ -48,6 +52,8 @@ class DataRow(dict):
     def __getitem__(self, key):
         """Override to return None rather than an empty string."""
         
+        if not dict.__contains__(self, key):
+            return None
         val = dict.__getitem__(self, key)
         return val if val != "" else None
         
@@ -73,22 +79,31 @@ class DataRow(dict):
         votes = {}
         if year == 2005:
             cell_key = self.votes_2005_cells
-            total_cell = "Totvt05"
+            total_votes = int(self["Totvt05"].replace(",",""))
         elif year == 2010:
+            # Unaccountably, there is no total vote count for 2010, so we need
+            # to work it out from the turnout and electorate fields.
             cell_key = self.votes_2010_cells
-            total_cell = "Elec10"
+            electorate = int(self["Elec10"].replace(",",""))
+            turnout = float(self["Turn10"])
+            total_votes = int(turnout * electorate / 100)
         else:
             assert False, "Invalid year requested for votes: {0}".format(year)
             
         for party in cell_key.keys():
-            numvotes = self[self.cell_key[party]]
+            numvotes = self[cell_key[party]]
             if numvotes is not None:
                 numvotes = int(numvotes.replace(",",""))
+            else:
+                numvotes = 0
             
+            logging.debug("{0}: {1} got {2} votes".format(self["Seat"],
+                                                          party,
+                                                          numvotes))
             votes[party] = numvotes
         
-        # Calculate the number of votes for unlisted parties.    
-        total_votes = self[total_cell].replace(",","")
+        # Calculate the number of votes for unlisted parties.
+        logger.debug("Total votes: {0}".format(total_votes))  
         votes[OTH] = total_votes - sum(votes.values())
             
         return votes
@@ -98,11 +113,13 @@ def csv_to_dicts(filename):
     """Function to convert a CSV file into a list of DataRows, each holding
     one row of the CSV table.
     """
-    with open(filename, 'r') as csvfile:
+    with open(filename, 'rb') as csvfile:
         reader = csv.reader(csvfile)
         
-        # The first row is the headers - save off their names.
-        headers = csvfile.next()
+        # The first row is the headers - save off their names, minus
+        # surrounding whitespace.
+        headers = [hdr.strip() for hdr in reader.next()]
+        logger.debug("Found {0} headers".format(len(headers)))
         
         # All subsequent rows are the entries in this table - save them off
         # under their appropriate headers.
