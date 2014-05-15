@@ -17,6 +17,7 @@ import cPickle as pickle
 import csvparser
 from constants import *
 from candidate import Candidate
+from constituency import Constituency
 
 # Constants
 
@@ -41,70 +42,32 @@ class Election(object):
            
         for row in rows:
             const = row["Seat"]
-            candidates = row.candidates()
-            votes_2005 = row.votes(2005)
-            votes_2010 = row.votes(2010)
-            turnout_2005 = float(row["Turn05"])
-            turnout_2010 = float(row["Turn10"])
-
-            # All the data is now split out, so pack it into structures.
             if const not in self.constituencies:
-                constituency = Constituency(const)
-                self.constituencies[const] = constituency
+                c = Constituency(const)
+                self.constituencies[const] = c
             else:
-                constituency = self.constituencies[const]
-                
-            is_incumbent = True if incumbent == "*" else False
-            votes_num = int(votes.replace(",", ""))
-            if party not in self.parties:
-                party_obj = Party(party)
-                self.parties[party] = party_obj
-            else:
-                party_obj = self.parties[party]
-            cand_obj = Candidate(candidate,
-                                 party_obj, 
-                                 votes_num, 
-                                 is_incumbent)
-            constituency.race.candidates[candidate] = cand_obj
+                c = self.constituencies[const]
+            c.region = row["Region"]
+            candidates_2010 = row.candidates()
+            c.votes_2005 = row.votes(2005)
+            c.votes_2010 = row.votes(2010)
+            c.turnout_2005 = float(row["Turn05"])
+            c.turnout_2010 = float(row["Turn10"])
+
+            # Copy the votes into the Candidate structures.
+            c.candidates = []
+            for party in c.votes_2010.keys():
+                if party in candidates_2010.keys():
+                    name = candidates_2010[party]
+                else:
+                    name = "Unknown"
+                candidate = Candidate(name, party, c.votes_2010[party])
+                c.candidates.append(candidate)
             
-            constituency.race.turnout = float(turnout)
-            constituency.race.change = change
-            constituency.race.swing_lab_con = swing_lab_con
-            constituency.race.swing_con_ld = swing_con_ld
-            constituency.race.swing_lab_ld = swing_lab_ld
-            constituency.race.swing_holder_winner = swing_holder_winner
+
                 
         return    
                     
-        
-    
-class Constituency(object):
-    """Represents an entire constituency."""
-    
-    def __init__(self, name):
-        """Constructor."""
-        
-        self.name = name
-        self.race = Race()
-        
-        return
-
-        
-class Race(object):
-    """Election within a single constituency."""
-
-    def __init__(self):
-        """Constructor."""
-        
-        self.candidates = {}
-        self.turnout = 0
-        self.change = None
-        self.swing_lab_con = 0
-        self.swing_con_ld = 0
-        self.swing_lab_ld = 0
-        self.swing_holder_winner = 0
-        
-        return
 
 
 class Party(object):

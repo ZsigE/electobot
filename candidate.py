@@ -11,12 +11,12 @@ Candidate data structure
 class Candidate(object):
     """Candidate for a seat."""
     
-    def __init__(self, name, party, votes, incumbent):
+    def __init__(self, name, party, votes):
         """Constructor.  Store relevant information."""
         
         self.name = name
         self.party = party
-        self.votes = votes
-        self.incumbent = incumbent
+        self.votes_2010 = votes
+        self.incumbent = None
         
         return

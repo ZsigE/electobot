@@ -57,7 +57,7 @@ class DataRow(dict):
         return self[self.cand_cells[party]]
     
     def candidates(self):
-        """List all the candidates who stood in this constituency."""
+        """List all the candidates who stood in 2010 in this constituency."""
         
         candidates = {}
         for party in self.cand_cells.keys():
