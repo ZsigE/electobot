@@ -261,10 +261,15 @@ def electobot():
     for party in election.predicted_support.keys():
         if election.predicted_support[party] == 0:
             del election.predicted_support[party]
+        else:
+            # Express the support as a ratio, not a percentage - this makes the
+            # maths much easier.
+            election.predicted_support[party] = \
+                                       (election.predicted_support[party] / 100)
     
     # Fill in "Other" support automatically, to guarantee the support adds up
     # to 100.
-    election.predicted_support[OTH] = (100 - 
+    election.predicted_support[OTH] = (1 - 
                                        sum(election.predicted_support.values())) 
             
     if opts.single_election:

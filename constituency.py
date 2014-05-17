@@ -62,8 +62,7 @@ class Constituency(object):
         # they got last time, modified by the total swing towards that party.
         for party in swing_matrix.keys():
             self.sim_votes[party] = int(self.votes_2010[party] + 
-                                     ((sum(swing_matrix[party].values()) /
-                                       100) *
+                                     (sum(swing_matrix[party].values()) *
                                       self.votes_2010[party]))
             if self.sim_votes[party] < 0:
                 # Support dropped the number of votes below zero.  Fix that.
@@ -85,7 +84,7 @@ class Constituency(object):
             # standard deviations from the mean.  Therefore, set the standard
             # deviation to be half the mean change in votes we expect from
             # the swing.
-            stdev = 0.5 * self.sim_votes[party] * (mean_absolute_swing / 100)
+            stdev = 0.5 * self.sim_votes[party] * mean_absolute_swing
             self.sim_votes[party] = int(random.normalvariate(
                                                           self.sim_votes[party],
                                                           stdev))
