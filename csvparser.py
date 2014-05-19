@@ -109,7 +109,7 @@ class DataRow(dict):
         return votes
     
 
-def csv_to_dicts(filename):
+def csv_to_dicts(filename, harvard=True):
     """Function to convert a CSV file into a list of DataRows, each holding
     one row of the CSV table.
     """
@@ -129,9 +129,31 @@ def csv_to_dicts(filename):
             for ii in range(len(row)):
                 row_dict[headers[ii]] = row[ii]
             
-            # Include only constituencies that were contested in 2010.
-            if row_dict["Win10"] is not None:
+            # If we're assuming that this is the Harvard election data file,
+            # include only constituencies that were contested in 2010.
+            if (row_dict["Win10"] is not None) or (not harvard):
                 rows.append(row_dict)   
             
     return rows
+
+def get_total_votes_from_guardian():
+    """Open the Guardian CSV file and get the total votes for each constituency.
+    """
+    
+    rows = csv_to_dicts("guardian_election_results_2010.csv", harvard=False)
+    
+    constituencies = {}
+    for row in rows:
+        if row["Seat"] in constituencies:
+            constituencies[row["Seat"]] += int(row["Vote"].replace(",",""))
+        else:
+            constituencies[row["Seat"]] = int(row["Vote"].replace(",",""))
+            
+    return constituencies
+        
+        
+    
+    
+    
+    
     

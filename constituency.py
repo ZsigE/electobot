@@ -21,11 +21,12 @@ logger = logging.getLogger("electobot.constituency")
 class Constituency(object):
     """Represents an entire constituency."""
     
-    def __init__(self, name):
+    def __init__(self, name, parent_election):
         """Constructor."""
         
         # Constant data
         self.name = name
+        self.election = parent_election
         self.candidates_2010 = {}
         self.votes_2010 = {}
         self.votes_2005 = {}
@@ -58,11 +59,16 @@ class Constituency(object):
         # and calculate a swing matrix for that too.
         swing_matrix = utils.calculate_swing(support_2010, predicted_support)
         
+        # Extract the swing between the national 2010 results and the national
+        # prediction from the parent election.
+        national_swing = self.election.swing_matrix
+        
         # Now we have to parcel those votes out.  Give each party the amount
-        # they got last time, modified by the total swing towards that party.
+        # they got last time, modified by the total national swing towards that
+        # party.
         for party in swing_matrix.keys():
             self.sim_votes[party] = int(self.votes_2010[party] + 
-                                     (sum(swing_matrix[party].values()) *
+                                     (sum(national_swing[party].values()) *
                                       self.votes_2010[party]))
             if self.sim_votes[party] < 0:
                 # Support dropped the number of votes below zero.  Fix that.
