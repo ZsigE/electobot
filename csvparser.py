@@ -108,7 +108,7 @@ class DataRow(dict):
             
         return votes
     
-
+# Utility functions
 def csv_to_dicts(filename, harvard=True):
     """Function to convert a CSV file into a list of DataRows, each holding
     one row of the CSV table.
