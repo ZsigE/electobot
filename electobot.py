@@ -13,6 +13,7 @@ import argparse
 import os
 import cPickle as pickle
 import logging
+from operator import attrgetter
 
 # Electobot imports
 import csvparser
@@ -20,6 +21,7 @@ import utils
 from constants import *
 from candidate import Candidate
 from constituency import Constituency
+from montecarlo import MonteCarlo
 
 # Set up logging
 logger = logging.getLogger("electobot")
@@ -43,7 +45,7 @@ class Election(object):
         self.result = None
         
         return
-    
+        
     def populate_from_csv(self, csv_filename):
         """Create an Election from saved election data in CSV format."""
         
@@ -175,15 +177,18 @@ class Election(object):
         self.result = Result()
         
         # First determine the largest party.
-        self.result.most_seats_won = 0
-        self.result.largest_party = None
-        for party in self.parties:
-            if self.parties[party].seats > self.result.most_seats_won:
-                self.result.most_seats_won = self.parties[party].seats
-                self.result.largest_party = party
+        party_list = sorted(self.parties.values(),
+                            key=attrgetter('seats'),
+                            reverse=True)
+        self.result.largest_party = party_list[0].name
+        self.result.most_seats_won = party_list[0].seats
+
+        # Also determine the runner-up and third-place parties.
+        self.result.runner_up = party_list[1].name
+        self.result.third_place = party_list[2].name
                 
-        # Now determine whether they're past or behind the winning line (and
-        # by how much).
+        # Now determine whether the largest party is past or behind the winning
+        # line (and by how much).
         self.result.margin_of_victory = (self.result.most_seats_won - 
                                          NEEDED_FOR_MAJORITY)
         if self.result.margin_of_victory >= 0:
@@ -235,6 +240,15 @@ class Election(object):
         
         
         return
+    
+    def run(self):
+        """Run the whole election."""
+        
+        self.predict_votes()
+        self.simulate()
+        self.analyze()
+        
+        return
 
 class Party(object):
     """Political party.  Used to classify Candidates."""
@@ -258,6 +272,8 @@ class Result(object):
         self.summary = ""  # One-line summary of the election result
         self.winner = None  # None represents a hung parliament
         self.largest_party = None
+        self.runner_up = None
+        self.third_place = None
         self.most_votes_party = None
         self.margin_of_victory = 0
         self.most_seats_won = 0
@@ -298,6 +314,12 @@ def electobot():
                          help="Simulate a single election",
                          action="store_true",
                          dest="single_election")
+    simopts.add_argument("--montecarlo", "-m",
+                         help="Run a Monte Carlo simulation",
+                         action="store",
+                         type=int,
+                         default=0,
+                         dest="iterations")
     
     partyopts = parser.add_argument_group("Party support options")
     partyopts.add_argument("--conservative", "-t",
@@ -392,10 +414,25 @@ def electobot():
             
     if opts.single_election:
         assert election is not None, "No election data to work with"
-        election.predict_votes()
-        election.simulate()
-        election.analyze()
+        election.run()
         print election.result.summary
+    elif opts.iterations > 0:
+        assert election is not None, "No election data to work with"
+        mc_sim = MonteCarlo(election)
+        mc_sim.run(opts.iterations)
+        
+        # Report the results from the Monte Carlo run.
+        print "Win percentages:"
+        for party in sorted(mc_sim.win_counts.keys()):
+            print "{0}: {1}".format(party,
+                                    mc_sim.get_result_percentage(mc_sim.
+                                                             win_counts[party]))
+            
+        print "Runner-up percentages:"
+        for party in sorted(mc_sim.runnerup_counts.keys()):
+            print "{0}: {1}".format(party,
+                                    mc_sim.get_result_percentage(mc_sim.
+                                                        runnerup_counts[party]))
             
     return
     
