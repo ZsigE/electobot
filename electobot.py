@@ -120,7 +120,7 @@ class Election(object):
         given year.  If no year is provided, use the predicted votes.
         """
         
-        support = {}
+        total_votes = {}
         for const_name in self.constituencies.keys():
             const = self.constituencies[const_name]
             if year is None:
@@ -131,10 +131,12 @@ class Election(object):
                 assert year == 2010, "Year must be None, 2005 or 2010"
                 votes = const.votes_2010
             for party in votes.keys():
-                if party not in support.keys():
-                    support[party] = votes[party]
+                if party not in total_votes.keys():
+                    total_votes[party] = votes[party]
                 else:
-                    support[party] += votes[party]
+                    total_votes[party] += votes[party]
+        
+        support = utils.calculate_support(total_votes)
                     
         return support
                 
@@ -142,6 +144,7 @@ class Election(object):
         """Predict the numbers of votes in each constituency."""
         
         # Calculate the overall swing matrix.
+        logger.debug("Calculating national swing matrix")
         support_2010 = self.calculate_overall_support(2010)
         self.swing_matrix = utils.calculate_swing(support_2010,
                                                   self.predicted_support)
@@ -238,6 +241,24 @@ class Election(object):
         self.result.seat_winner_is_pop_winner = (self.result.largest_party ==
                                                  self.result.most_votes_party)
         
+        # Was the vote distribution sufficiently close to the initial support
+        # figures?
+        overall_support = utils.calculate_support(votes)
+        support_2010 = self.calculate_overall_support(2010)
+        for party in self.predicted_support:
+            divergence = abs(self.predicted_support[party] - 
+                             overall_support[party])
+            logger.debug("{0} support was {1}, predicted {2}, actual {3}, "
+                         "divergence {4}".format(party,
+                                                 support_2010[party],
+                                                 self.predicted_support[party],
+                                                 overall_support[party],
+                                                 divergence))
+            if divergence > RESULT_TOLERANCE:
+                # This party's result is too far away from its predicted
+                # support.  This result can't stand.
+                logger.debug("Result too far from prediction!")
+                self.result.result_too_divergent = True
         
         return
     
@@ -281,6 +302,9 @@ class Result(object):
         self.libdem_seats = 0  
         self.greens_hold_brighton = False
         self.seat_winner_is_pop_winner = False   
+        
+        # Internal diagnostics
+        self.result_too_divergent = False
     
 # Functions
 def electobot():

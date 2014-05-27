@@ -26,6 +26,10 @@ OTH = "Other"
 NUM_OF_CONSTITUENCIES = 649
 NEEDED_FOR_MAJORITY = int(math.ceil(NUM_OF_CONSTITUENCIES / 2)) 
 
+# Tuning parameters for the model
+RESULT_TOLERANCE = 0.02 # In percentage points divided by 100
+SUPPORT_VARIATION = 0.005 # Also in percentage points
+
 # Logging
 LOG_FILE = "electobot.log"
 LOG_LEVEL = logging.DEBUG

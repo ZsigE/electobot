@@ -22,6 +22,7 @@ def calculate_support(votes):
     support = {}
     for party in votes.keys():
         support[party] = float(votes[party]) / sum(votes.values())
+        logger.debug("Support for {0}: {1}".format(party, support[party]))
         
     return support
 
@@ -35,15 +36,19 @@ def calculate_swing(support_before, support_after):
     abs_swing = {}
     for party in support_before.keys():
         if party in support_after.keys():
-            abs_swing[party] = support_after[party] - support_before[party]
+            abs_swing[party] = support_after[party] - support_before[party]     
         else:
             # No support level provided for this party - treat this as a zero
             # swing.
             abs_swing[party] = 0
-            
+        logger.debug("{0} absolute swing is {1}".format(party,
+                                                        abs_swing[party])) 
+           
     # Now fill in any new parties as if all their support swung into place.
     for party in (set(support_after.keys()) - set(support_before.keys())):
         abs_swing[party] = support_after[party]
+        logger.debug("{0} absolute swing is {1}".format(party,
+                                                        abs_swing[party])) 
         
     # Sort parties into those with positive and negative swings.  Zero swings
     # count as neither.
@@ -60,10 +65,14 @@ def calculate_swing(support_before, support_after):
     for party in positive_swings.keys():
         positive_support[party] = (positive_swings[party] /
                                    sum(positive_swings.values()))
+        logger.debug("{0} has {1} proportion of all positive support".
+                                         format(party, positive_support[party]))
     negative_support = {}
     for party in negative_swings.keys():
         negative_support[party] = (negative_swings[party] /
                                    sum(negative_swings.values()))
+        logger.debug("{0} has {1} proportion of all negative support".
+                                         format(party, negative_support[party]))
     
     # Create the swing matrix.  Basic rule is that parties with positive swing
     # must have taken that swing from parties with negative swing.  We don't
@@ -81,8 +90,16 @@ def calculate_swing(support_before, support_after):
         for from_party in negative_swings.keys():
             swing_matrix[to_party][from_party] = (swing * 
                                                   negative_support[from_party])
+            logger.debug("Swing from {0} to {1}: {2}".
+                                     format(from_party, 
+                                            to_party,
+                                            swing_matrix[to_party][from_party]))
         for from_party in zero_swings.keys():
             swing_matrix[to_party][from_party] = 0
+            logger.debug("Swing from {0} to {1}: {2}".
+                                     format(from_party, 
+                                            to_party,
+                                            swing_matrix[to_party][from_party]))
     
     # Parcel out negative swing as being "from" the positive-swing parties in 
     # the same way.
@@ -92,8 +109,16 @@ def calculate_swing(support_before, support_after):
         for from_party in positive_swings.keys():
             swing_matrix[to_party][from_party] = (swing * 
                                                   positive_support[from_party])
+            logger.debug("Swing from {0} to {1}: {2}".
+                                     format(from_party, 
+                                            to_party,
+                                            swing_matrix[to_party][from_party]))
         for from_party in zero_swings.keys():
-            swing_matrix[to_party][from_party] = 0            
+            swing_matrix[to_party][from_party] = 0  
+            logger.debug("Swing from {0} to {1}: {2}".
+                                     format(from_party, 
+                                            to_party,
+                                            swing_matrix[to_party][from_party]))          
     
     # Record that zero-swing parties haven't swung to or from anyone.
     for to_party in zero_swings.keys():

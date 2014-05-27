@@ -67,11 +67,14 @@ class Constituency(object):
         # they got last time, modified by the total national swing towards that
         # party.
         for party in swing_matrix.keys():
-            self.sim_votes[party] = int(self.votes_2010[party] + 
-                                     (sum(national_swing[party].values()) *
-                                      self.votes_2010[party]))
+            vote_diff = int(sum(national_swing[party].values()) *
+                            self.votes_2010[party])
+            logger.debug("{0} vote changes by {1}".format(party, vote_diff))
+            self.sim_votes[party] = self.votes_2010[party] + vote_diff
             if self.sim_votes[party] < 0:
                 # Support dropped the number of votes below zero.  Fix that.
+                logger.debug("{0} went below zero ({1})".
+                                           format(party, self.sim_votes[party]))
                 self.sim_votes[party] = 0
             
         # We now have the mean number of votes we expect each party to receive.

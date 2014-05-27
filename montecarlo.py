@@ -12,6 +12,9 @@ Monte Carlo simulation tools
 import logging
 import copy
 import random
+
+# Electobot imports
+from constants import *
     
 # Set up logging
 logger = logging.getLogger("electobot.montecarlo")
@@ -50,11 +53,12 @@ class MonteCarlo(object):
         predicted_support = copy.deepcopy(self.reference_election.
                                                               predicted_support)
         
-        # Poll results are always given to the nearest percentage point.  That
-        # means we can push each value up to half a percentage point in either
-        # direction and still be faithful to the provided poll numbers.
+        # Poll results are always given to within a margin of error.  That
+        # means we can push each value up to SUPPORT_VARIATION percentage
+        # points in either direction and still be faithful to the provided poll
+        # numbers.
         for party in predicted_support.keys():
-            modifier = random.uniform(-0.5, 0.5)
+            modifier = random.uniform(-SUPPORT_VARIATION, SUPPORT_VARIATION)
             predicted_support[party] += modifier
             
         return predicted_support
