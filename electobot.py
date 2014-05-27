@@ -21,7 +21,7 @@ import utils
 from constants import *
 from candidate import Candidate
 from constituency import Constituency
-from montecarlo import MonteCarlo
+import montecarlo
 
 # Set up logging
 logger = logging.getLogger("electobot")
@@ -442,21 +442,7 @@ def electobot():
         print election.result.summary
     elif opts.iterations > 0:
         assert election is not None, "No election data to work with"
-        mc_sim = MonteCarlo(election)
-        mc_sim.run(opts.iterations)
-        
-        # Report the results from the Monte Carlo run.
-        print "Win percentages:"
-        for party in sorted(mc_sim.win_counts.keys()):
-            print "{0}: {1}".format(party,
-                                    mc_sim.get_result_percentage(mc_sim.
-                                                             win_counts[party]))
-            
-        print "Runner-up percentages:"
-        for party in sorted(mc_sim.runnerup_counts.keys()):
-            print "{0}: {1}".format(party,
-                                    mc_sim.get_result_percentage(mc_sim.
-                                                        runnerup_counts[party]))
+        montecarlo.run_multithreaded_montecarlo(election, opts.iterations)
             
     return
     
