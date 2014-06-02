@@ -11,10 +11,10 @@ Once you have the code, run `python electobot.py -h` to see the available option
 
 ## What still needs doing?
 Plenty! Right now Electobot can simulate the outcome of an election based on polling data, and can also run a [Monte Carlo simulation](http://en.wikipedia.org/wiki/Monte_Carlo_method) to apply some random variation. Still to do:
-  * Tweaking the model - right now it appears to be biased too heavily towards the results of the 2010 election
-  * Tuning the randomization to give interesting but still plausible outcomes
+  * ~~Tweaking the model - right now it appears to be biased too heavily towards the results of the 2010 election~~ **Done!**
+  * ~~Tuning the randomization to give interesting but still plausible outcomes~~ **Done**, but tweaking still encouraged
   * Adding a web server interface to allow kicking off simulations online
-  * Multithreading the Monte Carlo simulation to take advantage of multiple-core systems
+  * ~~Multithreading the Monte Carlo simulation to take advantage of multiple-core systems~~ **Done!**
   * Using more of the data (turnout/socioeconomic indicators/etc) to improve the model
   * Anything else!
 
