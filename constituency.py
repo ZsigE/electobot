@@ -14,6 +14,7 @@ import random
 
 # Electobot imports
 import utils
+from constants import *
     
 # Set up logging
 logger = logging.getLogger("electobot.constituency")    
@@ -97,6 +98,11 @@ class Constituency(object):
             # deviation to be half the mean change in votes we expect from
             # the swing.
             stdev = 0.5 * self.sim_votes[party] * mean_absolute_swing
+            
+            # Apply a scaling factor for tuning.
+            stdev = stdev * SWING_SCALE_FACTOR
+            
+            # Calculate the tweaked number of votes.
             self.sim_votes[party] = int(random.normalvariate(
                                                           self.sim_votes[party],
                                                           stdev))
