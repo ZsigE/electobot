@@ -46,7 +46,7 @@ class Election(object):
         
         return
         
-    def populate_from_csv(self, csv_filename):
+    def populate_from_csv(self, csv_filename=HARVARD_CSV):
         """Create an Election from saved election data in CSV format."""
         
         # Extract all the information from the CSV file.
@@ -198,6 +198,7 @@ class Election(object):
             self.result.summary = "{0} victory (majority {1})".format(
                                                   self.result.largest_party,
                                                   self.result.margin_of_victory)
+            self.result.winner = self.result.largest_party
         else:
             self.result.summary = "Hung Parliament ({0} needs {1})".format(
                                             self.result.largest_party,
@@ -311,19 +312,24 @@ def electobot():
     """Main function."""
 
     # Set up logging.
+    if not os.path.exists(LOGS_DIR):
+        os.mkdir(LOGS_DIR)
     formatter = logging.Formatter('%(asctime)s - %(name)s - '
                                   '%(levelname)s - %(message)s')
     handler = logging.FileHandler(LOG_FILE, mode="w")
     handler.setFormatter(formatter)
-    logger.setLevel(LOG_LEVEL)
     logger.addHandler(handler)
      
     # Parse the input arguments.
     parser = argparse.ArgumentParser()
+    
+    parser.add_argument("--debug",
+                        help="Switch on debug logging",
+                        action="store_true",
+                        default=False,
+                        dest="debug")
+    
     fileopts = parser.add_argument_group("File options")
-    fileopts.add_argument("--csv", "-c",
-                         help="CSV file containing election data",
-                         action="store", dest="csv")
     fileopts.add_argument("--pickle", "-p",
                           help="File containing pickled election data",
                           action="store",
@@ -396,25 +402,28 @@ def electobot():
                            dest="bnp")
 
     opts = parser.parse_args()
+        
+    if opts.debug:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(LOG_LEVEL)
     
     election = None
-    if opts.csv:
-        # Populate the election from a CSV file.
-        assert os.path.exists(opts.csv), "{0} does not exist".format(opts.csv)
-        election = Election()
-        election.populate_from_csv(opts.csv)
-        
-        # For no apparent reason, the Harvard data does not include the total
-        # votes cast in each constituency in 2010.  Fill this in from the 
-        # Guardian data instead.
-        election.add_total_2010_votes()
-        
-    elif opts.pickle:
+    if opts.pickle:
         # Restore a saved election file from the pickled representation.
         assert os.path.exists(opts.pickle),                                    \
             "{0} does not exist".format(opts.pickle)
         with open(opts.pickle, "rb") as pickle_file:
             election = pickle.load(pickle_file)
+    else:
+        # Populate the election from a CSV file.
+        election = Election()
+        election.populate_from_csv()
+        
+        # For no apparent reason, the Harvard data does not include the total
+        # votes cast in each constituency in 2010.  Fill this in from the 
+        # Guardian data instead.
+        election.add_total_2010_votes()
         
     if opts.savefile:
         assert os.path.exists(opts.savefile),                                  \

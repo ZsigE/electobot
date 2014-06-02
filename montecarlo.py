@@ -13,7 +13,7 @@ import logging
 import copy
 import random
 import multiprocessing
-import time
+from operator import itemgetter
 
 # Electobot imports
 from constants import *
@@ -36,6 +36,10 @@ class MonteCarlo(object):
         
         return
     
+    def __call__(self):
+        """Call straight through to the run method."""
+        self.run()
+    
     def get_modified_support(self):
         """Return a tweaked copy of the support dictionary."""
         
@@ -53,19 +57,19 @@ class MonteCarlo(object):
         return predicted_support
     
     def run(self):
-        """Run a full Monte Carlo simulation for the given number of iterations.
-        """
+        """Run full Monte Carlo simulations until stopped."""
         
-        # Create a copy of the reference election to work with.
-        this_election = copy.deepcopy(self.reference_election)
+        while True:
+            # Create a copy of the reference election to work with.
+            this_election = copy.deepcopy(self.reference_election)
         
-        # Tweak the poll numbers a bit to give us some variety.
-        this_election.predicted_support = self.get_modified_support()
+            # Tweak the poll numbers a bit to give us some variety.
+            this_election.predicted_support = self.get_modified_support()
         
-        # Now run this election and store its Result.  We copy it so that
-        # the election itself can be immediately GCed.
-        this_election.run()
-        self.results.put(copy.deepcopy(this_election.result))
+            # Now run this election and store its Result.  We copy it so that
+            # the election itself can be immediately GCed.
+            this_election.run()
+            self.results.put(copy.deepcopy(this_election.result))
             
         return
 
@@ -81,12 +85,12 @@ def make_and_run_montecarlo(election, results_queue):
     
     return
 
-def get_result_percentage(self, result, total_results):
+def get_result_percentage(result, total_results):
     """Return the result as a percentage of all results."""
     
-    return (float(result) / len(self.results)) * 100
+    return (float(result) / total_results) * 100
         
-def analyze_montecarlo_results(results_queue):
+def analyze_montecarlo_results(results):
     """Analyze the overall results."""
     
     # Things we want to know about the final dataset.
@@ -104,8 +108,7 @@ def analyze_montecarlo_results(results_queue):
     seat_winner_is_pop_winner_count = 0
     
     margins_of_victory = []
-    while not results_queue.empty():
-        result = results_queue.get()
+    for result in results:
         num_of_results += 1
         if result.winner in win_counts:
             win_counts[result.winner] += 1
@@ -146,50 +149,67 @@ def analyze_montecarlo_results(results_queue):
             seat_winner_is_pop_winner_count += 1
             
     mean_margin_of_victory = (sum(margins_of_victory) /
-                              num_of_results)
+                              float(num_of_results))
     
     # Report the results from this analysis.
+    print "Winning percentages:"
+    for party in sorted(win_counts.iteritems(),
+                        key=itemgetter(1), 
+                        reverse=True):
+        if party[0] is None:
+            party_name = "[Hung Parliament]"
+        else:
+            party_name = party[0]
+        print "  {0}: {1}%".format(party_name,
+                                  get_result_percentage(win_counts[party[0]],
+                                                        num_of_results))
+    
     print "Largest-party percentages:"
     for party in sorted(largest_party_counts.keys()):
-        print "  {0}: {1}".format(party,
-                                  get_result_percentage(
+        print "  {0}: {1}%".format(party,
+                                   get_result_percentage(
                                                     largest_party_counts[party],
                                                     num_of_results))
         
     print "Runner-up percentages:"
     for party in sorted(runnerup_counts.keys()):
-        print "  {0}: {1}".format(party,
-                                  get_result_percentage(runnerup_counts[party],
-                                                        num_of_results))
+        print "  {0}: {1}%".format(party,
+                                   get_result_percentage(runnerup_counts[party],
+                                                         num_of_results))
+        
+    print "Mean margin of victory: {0}".format(mean_margin_of_victory)
+    print ("UKIP gained at least one seat in "
+           "{0}% of runs".format(get_result_percentage(ukip_get_seats_count,
+                                                       num_of_results)))
     
     return
 
 def run_multithreaded_montecarlo(election, iterations):
     """Run a Monte Carlo simulation using multiple threads to save time."""
     
-    # Create some processes ready to run the simulation.
-    pool_manager = multiprocessing.Manager()
-    proc_pool = pool_manager.Pool()
-    
     # Create a queue to hold the results.
-    results_queue = pool_manager.Queue()
+    results_queue = multiprocessing.Queue()
     
-    # Kick off the required number of iterations.
-    for ii in range(iterations):
-        proc_pool.apply_async(make_and_run_montecarlo,
-                              (election, results_queue))
-        
-    proc_pool.close()
+    # Create and start some processes ready to run the simulation.
+    processes = []
+    for ii in range(multiprocessing.cpu_count()):
+        mc = MonteCarlo(election, results_queue)
+        proc = multiprocessing.Process(target=mc)
+        proc.start()
+        processes.append(proc)
     
     # Monitor the results queue so we can see them coming in.
-    while results_queue.qsize() < iterations:
-        logger.info("Results so far: {0} of {1}".format(results_queue.qsize(),
+    results = []
+    while len(results) < iterations:
+        logger.info("Results so far: {0} of {1}".format(len(results),
                                                         iterations))
-        time.sleep(0.5)
+        res = results_queue.get(block=True, timeout=10)
+        results.append(res)
         
-    proc_pool.join()
+    for proc in processes:
+        proc.terminate()
     
     # All results are in, so now we can analyze them.
-    analyze_montecarlo_results(results_queue)
+    analyze_montecarlo_results(results)
     
     return

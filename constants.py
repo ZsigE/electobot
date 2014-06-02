@@ -10,6 +10,7 @@ Constants for use by all modules
 
 import math
 import logging
+import os
 
 # Party names
 CON = "Conservative"
@@ -22,6 +23,10 @@ BNP = "BNP"
 UKP = "UKIP"
 OTH = "Other"
 
+# Data CSV file paths
+HARVARD_CSV = "harvard_election_results_2010.csv"
+GUARDIAN_CSV = "guardian_election_results_2010.csv"
+
 # Constituency numbers (only including those contested in 2010)
 NUM_OF_CONSTITUENCIES = 649
 NEEDED_FOR_MAJORITY = int(math.ceil(NUM_OF_CONSTITUENCIES / 2)) 
@@ -31,5 +36,6 @@ RESULT_TOLERANCE = 0.02 # In percentage points divided by 100
 SUPPORT_VARIATION = 0.005 # Also in percentage points
 
 # Logging
-LOG_FILE = "electobot.log"
-LOG_LEVEL = logging.DEBUG
+LOGS_DIR = "logs"
+LOG_FILE = os.path.join(LOGS_DIR, "electobot.log")
+LOG_LEVEL = logging.INFO
