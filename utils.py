@@ -10,6 +10,7 @@ Utility functions
 
 # Python imports
 import logging
+import math
     
 # Set up logging
 logger = logging.getLogger("electobot.utils")    
@@ -128,9 +129,22 @@ def calculate_swing(support_before, support_after):
             
     return swing_matrix
         
-        
-            
-            
+def std_dev(array):
+    """Python 2.7 does not include a standard deviation function, which is kind
+    of ludicrous.  Re-implement a simplified version of the NumPy one.
+    """
+    
+    # Calculate the mean of these values.
+    mean = sum(array) / float(len(array))
+    
+    # Now calculate the squared deviation for the mean for each value.
+    sq_dev = [(x - mean)**2 for x in array]
+    
+    # And get the mean of those squared deviations.
+    mean_sq_dev = sum(sq_dev) / float(len(sq_dev))
+    
+    # The standard deviation is the square root of that figure.
+    return math.sqrt(mean_sq_dev)
             
         
     

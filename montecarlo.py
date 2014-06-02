@@ -17,6 +17,7 @@ from operator import itemgetter
 
 # Electobot imports
 from constants import *
+import utils
     
 # Set up logging
 logger = logging.getLogger("electobot.montecarlo")
@@ -147,8 +148,10 @@ def analyze_montecarlo_results(results):
         if result.seat_winner_is_pop_winner:
             seat_winner_is_pop_winner_count += 1
             
+    # Get the mean and standard deviation of the margin of victory.
     mean_margin_of_victory = (sum(margins_of_victory) /
                               float(num_of_results))
+    margin_stddev = utils.std_dev(margins_of_victory)
     
     # Report the results from this analysis.
     print "Winning percentages:"
@@ -176,7 +179,10 @@ def analyze_montecarlo_results(results):
                                    get_result_percentage(runnerup_counts[party],
                                                          num_of_results))
         
-    print "Mean margin of victory: {0}".format(mean_margin_of_victory)
+    print ("Mean margin of victory: {0} (95% between {1:.2f} and"
+           " {2:.2f})".format(mean_margin_of_victory,
+                              (mean_margin_of_victory - (2 * margin_stddev)),
+                              (mean_margin_of_victory + (2 * margin_stddev))))
     print "Mean Lib-Dem seats: {0}".format(sum(libdem_seats)/
                                            float(num_of_results))
     print ("UKIP gained at least one seat in "
