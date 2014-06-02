@@ -7,7 +7,7 @@ Electobot provides election results analysis for UK General Elections. Its aim i
 ## What do I need to run it?
 The only dependency right now is Python 2.7. Electobot should run on any platform for which Python 2.7 has been released, although it's only been tested on Windows so far.
 
-Once you have the code, run `python electobot.py -h` to see the available options for running simulations. (You'll want to specify `harvard_election_results_2010.csv` as the CSV file.)
+Once you have the code, run `python electobot.py -h` to see the available options for running simulations.
 
 ## What still needs doing?
 Plenty! Right now Electobot can simulate the outcome of an election based on polling data, and can also run a [Monte Carlo simulation](http://en.wikipedia.org/wiki/Monte_Carlo_method) to apply some random variation. Still to do:
