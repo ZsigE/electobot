@@ -103,7 +103,7 @@ def analyze_montecarlo_results(results):
     most_seats_won = 0
     most_seats_won_party = None
     ukip_get_seats_count = 0
-    libdem_wipeout_count = 0
+    libdem_seats = []
     greens_hold_brighton_count = 0
     seat_winner_is_pop_winner_count = 0
     
@@ -139,8 +139,7 @@ def analyze_montecarlo_results(results):
         if result.ukip_seats > 0:
             ukip_get_seats_count += 1
             
-        if result.libdem_seats == 0:
-            libdem_wipeout_count += 1
+        libdem_seats.append(result.libdem_seats)
             
         if result.greens_hold_brighton:
             greens_hold_brighton_count += 1
@@ -178,9 +177,15 @@ def analyze_montecarlo_results(results):
                                                          num_of_results))
         
     print "Mean margin of victory: {0}".format(mean_margin_of_victory)
+    print "Mean Lib-Dem seats: {0}".format(sum(libdem_seats)/
+                                           float(num_of_results))
     print ("UKIP gained at least one seat in "
            "{0}% of runs".format(get_result_percentage(ukip_get_seats_count,
                                                        num_of_results)))
+    print ("Greens hold Brighton Pavilion in "
+           "{0}% of runs".format(get_result_percentage(
+                                                     greens_hold_brighton_count,
+                                                     num_of_results)))
     
     return
 
@@ -200,11 +205,17 @@ def run_multithreaded_montecarlo(election, iterations):
     
     # Monitor the results queue so we can see them coming in.
     results = []
+    too_divergent = 0
     while len(results) < iterations:
         logger.info("Results so far: {0} of {1}".format(len(results),
                                                         iterations))
         res = results_queue.get(block=True, timeout=10)
-        results.append(res)
+        if not res.result_too_divergent:
+            results.append(res)
+        else:
+            too_divergent += 1
+    logger.info("{0} results discarded for unacceptable "
+                "divergence".format(too_divergent))
         
     for proc in processes:
         proc.terminate()
