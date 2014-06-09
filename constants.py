@@ -27,6 +27,9 @@ OTH = "Other"
 HARVARD_CSV = "harvard_election_results_2010.csv"
 GUARDIAN_CSV = "guardian_election_results_2010.csv"
 
+# UK Polling Report historical poll data page URL
+UKPR_POLL_URL = "http://ukpollingreport.co.uk/voting-intention-2"
+
 # Constituency numbers (only including those contested in 2010)
 NUM_OF_CONSTITUENCIES = 649
 NEEDED_FOR_MAJORITY = int(math.ceil(NUM_OF_CONSTITUENCIES / 2)) 
