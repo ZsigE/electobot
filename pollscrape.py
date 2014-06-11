@@ -11,8 +11,11 @@ Poll data scraper
 # Python imports
 import logging
 import urllib
-from xml.etree import ElementTree
 import datetime
+import json
+
+# External imports
+from bs4 import BeautifulSoup
 
 # Electobot imports
 import utils
@@ -28,15 +31,21 @@ class PollScrape(object):
     class Poll(object):
         """Historical poll data."""
         
-        def __init__(self, datestr, pollster, sponsor, con, lab, lib, ukip):
+        def __init__(self, 
+                     datestr, 
+                     pollster, 
+                     sponsor, 
+                     sample_size, 
+                     con, lab, lib, ukip):
             """Constructor.  Store off data."""
             
             # Store off the easy stuff.
             self.pollster = pollster
             self.sponsor = sponsor
+            self.sample_size = sample_size
             
             # Parse the date string into a date object for easy sorting.
-            self.date = datetime.datetime.strptime(datestr, '%Y-%m-%d')
+            self.date = datetime.datetime.strptime(datestr, '%d %b %Y')
             
             # Store all the vote percentages as if they were votes from a total
             # turnout of 100.
@@ -70,40 +79,58 @@ class PollScrape(object):
         """Get the UK Polling Report historical poll page and parse it to
         extract the historical polling data table in XML."""
         
-        with urllib.urlopen(UKPR_POLL_URL) as pollpage:
+        pollpage = urllib.urlopen(WIKI_POLLS_URL).read()
+        json_page = json.loads(pollpage)
+        tree = BeautifulSoup(json_page["parse"]["text"]["*"])
         
-            tree = ElementTree.parse(pollpage)
-            
-            table_div = tree.find(".//div[class='polltable']")
-            table = table_div.find("table")
+        tables = tree.find_all("table")
         
-        return table
+        # There's one table for every year in the polling records.  We only care
+        # about the first two (2014 and 2013), but we want to join those values
+        # together.  Take all the rows after the first (as that's the header).
+        rows_2014 = tables[0].find_all("tr")[1:]
+        rows_2013 = tables[1].find_all("tr")[1:]
+        
+        rows = {2014: rows_2014, 2013: rows_2013}
+        
+        return rows
         
     def create_polls_from_table(self):
         """Convert XML table into a series of Poll objects."""
         
-        table = self.fetch_poll_xml()
-        rows_iter = table.iterfind(".//tr")
+        rows_dict = self.fetch_poll_xml()
         
-        # Discard the first two rows from the iterator, as these are just the
-        # header row.
-        rows_iter.next()
-        rows_iter.next()
-        
-        # Now go through the remaining rows, extracting the data and storing it
-        # in Poll structures.
-        for row in rows_iter:
-            cells = list(row.iter("td"))
-            label = cells[0].findtext(".")
-            pollster, slash, sponsor = label.partition("/")
-            datestr = cells[1].findtext(".")
-            con = int(cells[2].findtext("."))
-            lab = int(cells[3].findtext("."))
-            lib = int(cells[4].findtext("."))
-            ukip = int(cells[5].findtext("."))
-            
-            poll = self.Poll(datestr, pollster, sponsor, con, lab, lib, ukip)
-            self.polls.append(poll)
+        # Go through the rows, extracting the data from the cells and storing 
+        # it in Poll structures.
+        for year, rows in rows_dict.iteritems():
+            for row in rows:
+                cells = row.find_all("td")
+                if len(cells) < 8:
+                    # Not all cells are present - skip this row.
+                    continue
+ 
+                # We only care about the last date when fieldwork was conducted.
+                dates = cells[0].string
+                if "-" in dates:
+                    dates = dates.partition("-")[2]
+                elif u"\u2013" in dates:
+                    dates = dates.partition(u"\u2013")[2]
+                
+                datestr = "{0} {1}".format(dates, year).strip()
+                label = cells[1].a.string
+                pollster, slash, sponsor = label.partition("/")
+                sample_size = int(cells[2].string.replace(",",""))
+                con = int(cells[3].string.replace("%", ""))
+                lab = int(cells[4].string.replace("%", ""))
+                lib = int(cells[5].string.replace("%", ""))
+                ukip = int(cells[6].string.replace("%", ""))
+                
+                poll = self.Poll(datestr,
+                                 pollster, 
+                                 sponsor,
+                                 sample_size, 
+                                 con, lab, lib, ukip)
+                self.polls.append(poll)
             
         return
     

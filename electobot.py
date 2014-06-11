@@ -331,11 +331,11 @@ def electobot():
     
     fileopts = parser.add_argument_group("File options")
     fileopts.add_argument("--pickle", "-p",
-                          help="File containing pickled election data",
+                          help="File containing pickled results data",
                           action="store",
                           dest="pickle")
     fileopts.add_argument("--savefile", "-s", 
-                          help="Filename for saving pickled election data",
+                          help="Filename for saving pickled results data",
                           action="store",
                           dest="savefile")
     
@@ -350,6 +350,10 @@ def electobot():
                          type=int,
                          default=0,
                          dest="iterations")
+    simopts.add_argument("--new-polls", "-e",
+                         help="Simulate based on any new polling data",
+                         action="store_true",
+                         dest="newpolls")
     
     partyopts = parser.add_argument_group("Party support options")
     partyopts.add_argument("--conservative", "-t",
@@ -431,6 +435,11 @@ def electobot():
         with open(opts.savefile, "wb") as save_file:
             pickle.dump(election, save_file, protocol=0)
     
+    if opts.newpolls:
+        # Fetch new polling data from the internet and simulate any that isn't
+        # already in our saved data.
+        assert False, "Not implemented!"
+        
     # Fill in the support for each party from the command-line arguments.
     election.predicted_support = {
                                   CON: opts.conservative,
