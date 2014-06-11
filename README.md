@@ -21,5 +21,10 @@ Plenty! Right now Electobot can simulate the outcome of an election based on pol
 ## Where's the documentation?
 The code is pretty well commented, so that's a good place to start. I'll also be trying to document the code in a more user-friendly way on the Wiki. Watch [this space](http://github.com/ZsigE/electobot/wiki/Electobot).
 
+## Are you using any third-party code?
+Funny you should mention that. Electobot uses [BeautifulSoup](http://www.crummy.com/software/BeautifulSoup/) v4.3.2, which can be included in code like this under the MIT License (see the LICENSE file for the full text).
+
 ## Where did the election data come from?
 Electobot uses two data sources: [the Guardian's datablog](http://www.theguardian.com/news/datablog/2010/may/07/uk-election-results-data-candidates-seats) and [Pippa Norris's dataset](http://www.hks.harvard.edu/fs/pnorris/Data/Data.htm#) from the John F Kennedy School of Government at Harvard University. Both have been converted to CSV files and checked into the repo.
+
+Historical polling data comes from [Wikipedia](http://en.wikipedia.org/wiki/Opinion_polling_for_the_next_United_Kingdom_general_election), so take it with a pinch of salt and check the latest revisions before running based on that!
