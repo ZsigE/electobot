@@ -19,7 +19,7 @@ from bs4 import BeautifulSoup
 
 # Electobot imports
 import utils
-from constants import *
+from electobot.constants import *
     
 # Set up logging
 logger = logging.getLogger("electobot.pollscrape")

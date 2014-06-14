@@ -24,8 +24,11 @@ UKP = "UKIP"
 OTH = "Other"
 
 # Data CSV file paths
-HARVARD_CSV = "harvard_election_results_2010.csv"
-GUARDIAN_CSV = "guardian_election_results_2010.csv"
+RESOURCE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            "..",
+                            "res")
+HARVARD_CSV = os.path.join(RESOURCE_DIR, "harvard_election_results_2010.csv")
+GUARDIAN_CSV = os.path.join(RESOURCE_DIR, "guardian_election_results_2010.csv")
 
 # Wikipedia's historical poll data API URL
 WIKI_POLLS_URL = ("http://en.wikipedia.org/w/api.php?action=parse&prop=text&"

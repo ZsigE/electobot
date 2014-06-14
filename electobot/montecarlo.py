@@ -16,7 +16,7 @@ import multiprocessing
 from operator import itemgetter
 
 # Electobot imports
-from constants import *
+from electobot.constants import *
 import utils
     
 # Set up logging

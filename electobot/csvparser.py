@@ -13,7 +13,7 @@ import csv
 import logging
 
 # Electobot imports
-from constants import *
+from electobot.constants import *
 
 # Set up logging
 logger = logging.getLogger("electobot.csvparser")
@@ -140,7 +140,7 @@ def get_total_votes_from_guardian():
     """Open the Guardian CSV file and get the total votes for each constituency.
     """
     
-    rows = csv_to_dicts("guardian_election_results_2010.csv", harvard=False)
+    rows = csv_to_dicts(GUARDIAN_CSV, harvard=False)
     
     constituencies = {}
     for row in rows:
