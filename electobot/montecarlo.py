@@ -74,6 +74,125 @@ class MonteCarlo(object):
             
         return
 
+class MonteCarloResult(object):
+    """Object to hold results from a set of elections run as a Monte Carlo
+    simulation.
+    """
+    
+    def __init__(self):
+        """Initialize variables."""
+        
+        # Things we want to know about the final dataset.
+        self.num_of_results = 0
+        self.win_counts = {}
+        self.seats = {}
+        self.mean_seats = {}
+        self.stddev_seats = {}
+        self.largest_party_counts = {}
+        self.mean_margin_of_victory = 0
+        self.most_seats_won = 0
+        self.most_seats_won_party = None
+        self.greens_hold_brighton_count = 0
+        self.seat_winner_is_pop_winner_count = 0
+        self.margins_of_victory = []
+        
+        return
+    
+    def analyze(self, results):
+        """Analyze the results."""
+        
+        for result in results:
+            self.num_of_results += 1
+            if result.winner in self.win_counts:
+                self.win_counts[result.winner] += 1
+            else:
+                self.win_counts[result.winner] = 1
+            
+            for party in result.seats.keys():
+                if party in self.seats.keys():
+                    self.seats[party].append(result.seats[party])
+                else:
+                    self.seats[party] = [result.seats[party]]
+                
+            if result.largest_party in self.largest_party_counts:
+                self.largest_party_counts[result.largest_party] += 1
+            else:
+                self.largest_party_counts[result.largest_party] = 1
+                
+            self.margins_of_victory.append(result.margin_of_victory)
+            
+            if result.most_seats_won > self.most_seats_won:
+                self.most_seats_won = result.most_seats_won
+                self.most_seats_won_party = result.largest_party
+                
+            if result.greens_hold_brighton:
+                self.greens_hold_brighton_count += 1
+                
+            if result.seat_winner_is_pop_winner:
+                self.seat_winner_is_pop_winner_count += 1
+                
+        # Calculate the mean and standard deviation of the number of seats for
+        # each party.
+        for party in self.seats.keys():
+            self.mean_seats[party] = (sum(self.seats[party]) / 
+                                      len(self.seats[party]))
+            self.stddev_seats[party] = utils.std_dev(self.seats[party])
+            
+        return
+    
+    def report(self):
+        """Report overall results."""
+        
+        # Get the mean and standard deviation of the margin of victory.
+        mean_margin_of_victory = (sum(self.margins_of_victory) /
+                                  float(self.num_of_results))
+        margin_stddev = utils.std_dev(self.margins_of_victory)
+        
+        # Report the results from this analysis.
+        print "Winning percentages:"
+        for party in sorted(self.win_counts.iteritems(),
+                            key=itemgetter(1), 
+                            reverse=True):
+            if party[0] is None:
+                party_name = "[Hung Parliament]"
+            else:
+                party_name = party[0]
+            print "  {0}: {1}%".format(party_name,
+                                get_result_percentage(self.win_counts[party[0]],
+                                                      self.num_of_results))
+        
+        print "Largest-party percentages:"
+        for party in sorted(self.largest_party_counts.keys()):
+            print "  {0}: {1}%".format(party,
+                                       get_result_percentage(
+                                               self.largest_party_counts[party],
+                                               self.num_of_results))
+            
+        print "Mean number of seats per-party (95% confidence intervals):"
+        for party in sorted(self.mean_seats.keys(), 
+                            key=self.mean_seats.get,
+                            reverse=True):
+            print "  {0}: {1} ({2:.2f}-{3:.2f})".format(
+                                               party,
+                                               self.mean_seats[party],
+                                               (self.mean_seats[party] -
+                                                (2 * self.stddev_seats[party])),
+                                               (self.mean_seats[party] + 
+                                                (2 * self.stddev_seats[party])))
+            
+        print ("Mean margin of victory: {0} (95% between {1:.2f} and"
+               " {2:.2f})".format(
+                                mean_margin_of_victory,
+                                (mean_margin_of_victory - (2 * margin_stddev)),
+                                (mean_margin_of_victory + (2 * margin_stddev))))
+
+        print ("Greens hold Brighton Pavilion in "
+               "{0}% of runs".format(get_result_percentage(
+                                                self.greens_hold_brighton_count,
+                                                self.num_of_results)))
+        
+        return
+
 def make_and_run_montecarlo(election, results_queue):
     """Run a single election for the Monte Carlo simulation."""
     
@@ -90,110 +209,6 @@ def get_result_percentage(result, total_results):
     """Return the result as a percentage of all results."""
     
     return (float(result) / total_results) * 100
-        
-def analyze_montecarlo_results(results):
-    """Analyze the overall results."""
-    
-    # Things we want to know about the final dataset.
-    num_of_results = 0
-    win_counts = {}
-    largest_party_counts = {}
-    runnerup_counts = {}
-    third_place_counts = {}
-    mean_margin_of_victory = 0
-    most_seats_won = 0
-    most_seats_won_party = None
-    ukip_get_seats_count = 0
-    libdem_seats = []
-    greens_hold_brighton_count = 0
-    seat_winner_is_pop_winner_count = 0
-    
-    margins_of_victory = []
-    for result in results:
-        num_of_results += 1
-        if result.winner in win_counts:
-            win_counts[result.winner] += 1
-        else:
-            win_counts[result.winner] = 1
-            
-        if result.largest_party in largest_party_counts:
-            largest_party_counts[result.largest_party] += 1
-        else:
-            largest_party_counts[result.largest_party] = 1
-            
-        if result.runner_up in runnerup_counts:
-            runnerup_counts[result.runner_up] += 1
-        else:
-            runnerup_counts[result.runner_up] = 1
-            
-        if result.third_place in third_place_counts:
-            third_place_counts[result.third_place] += 1
-        else:
-            third_place_counts[result.third_place] = 1
-            
-        margins_of_victory.append(result.margin_of_victory)
-        
-        if result.most_seats_won > most_seats_won:
-            most_seats_won = result.most_seats_won
-            most_seats_won_party = result.largest_party
-            
-        if result.ukip_seats > 0:
-            ukip_get_seats_count += 1
-            
-        libdem_seats.append(result.libdem_seats)
-            
-        if result.greens_hold_brighton:
-            greens_hold_brighton_count += 1
-            
-        if result.seat_winner_is_pop_winner:
-            seat_winner_is_pop_winner_count += 1
-            
-    # Get the mean and standard deviation of the margin of victory.
-    mean_margin_of_victory = (sum(margins_of_victory) /
-                              float(num_of_results))
-    margin_stddev = utils.std_dev(margins_of_victory)
-    
-    # Report the results from this analysis.
-    print "Winning percentages:"
-    for party in sorted(win_counts.iteritems(),
-                        key=itemgetter(1), 
-                        reverse=True):
-        if party[0] is None:
-            party_name = "[Hung Parliament]"
-        else:
-            party_name = party[0]
-        print "  {0}: {1}%".format(party_name,
-                                  get_result_percentage(win_counts[party[0]],
-                                                        num_of_results))
-    
-    print "Largest-party percentages:"
-    for party in sorted(largest_party_counts.keys()):
-        print "  {0}: {1}%".format(party,
-                                   get_result_percentage(
-                                                    largest_party_counts[party],
-                                                    num_of_results))
-        
-    print "Runner-up percentages:"
-    for party in sorted(runnerup_counts.keys()):
-        print "  {0}: {1}%".format(party,
-                                   get_result_percentage(runnerup_counts[party],
-                                                         num_of_results))
-        
-    print ("Mean margin of victory: {0} (95% between {1:.2f} and"
-           " {2:.2f})".format(mean_margin_of_victory,
-                              (mean_margin_of_victory - (2 * margin_stddev)),
-                              (mean_margin_of_victory + (2 * margin_stddev))))
-    print "Mean Lib-Dem seats: {0}".format(sum(libdem_seats)/
-                                           float(num_of_results))
-    print ("UKIP gained at least one seat in "
-           "{0}% of runs".format(get_result_percentage(ukip_get_seats_count,
-                                                       num_of_results)))
-    print ("Greens hold Brighton Pavilion in "
-           "{0}% of runs".format(get_result_percentage(
-                                                     greens_hold_brighton_count,
-                                                     num_of_results)))
-    
-    return
 
 def run_multithreaded_montecarlo(election, iterations):
     """Run a Monte Carlo simulation using multiple threads to save time."""
@@ -203,30 +218,35 @@ def run_multithreaded_montecarlo(election, iterations):
     
     # Create and start some processes ready to run the simulation.
     processes = []
-    for ii in range(multiprocessing.cpu_count()):
-        mc = MonteCarlo(election, results_queue)
-        proc = multiprocessing.Process(target=mc)
-        proc.start()
-        processes.append(proc)
-    
-    # Monitor the results queue so we can see them coming in.
-    results = []
-    too_divergent = 0
-    while len(results) < iterations:
-        logger.info("Results so far: {0} of {1}".format(len(results),
-                                                        iterations))
-        res = results_queue.get(block=True, timeout=10)
-        if not res.result_too_divergent:
-            results.append(res)
-        else:
-            too_divergent += 1
-    logger.info("{0} results discarded for unacceptable "
-                "divergence".format(too_divergent))
+    try:
+        for ii in range(multiprocessing.cpu_count()):
+            mc = MonteCarlo(election, results_queue)
+            proc = multiprocessing.Process(target=mc)
+            processes.append(proc)
+            proc.start()
         
-    for proc in processes:
-        proc.terminate()
+        # Monitor the results queue so we can see them coming in.
+        results = []
+        too_divergent = 0
+        while len(results) < iterations:
+            logger.info("Results so far: {0} of {1}".format(len(results),
+                                                            iterations))
+            res = results_queue.get(block=True, timeout=10)
+            if not res.result_too_divergent:
+                results.append(res)
+            else:
+                logger.debug("Too divergent.")
+                logger.debug(str(res.support))
+                too_divergent += 1
+        logger.info("{0} results discarded for unacceptable "
+                    "divergence".format(too_divergent))
+    finally: 
+        # Make sure we kill all the processes if we're interrupted.   
+        for proc in processes:
+            proc.terminate()
     
     # All results are in, so now we can analyze them.
-    analyze_montecarlo_results(results)
+    mcresult = MonteCarloResult()
+    mcresult.analyze(results)
     
-    return
+    return mcresult

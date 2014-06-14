@@ -42,7 +42,10 @@ NEEDED_FOR_MAJORITY = int(math.ceil(NUM_OF_CONSTITUENCIES / 2))
 # Tuning parameters for the model
 RESULT_TOLERANCE = 0.02 # In percentage points divided by 100
 SUPPORT_VARIATION = 0.005 # Also in percentage points
-SWING_SCALE_FACTOR = 1.5 # Scale the amount of variance in vote numbers by this
+SWING_SCALE_FACTOR = 1.0 # Scale the amount of variance in vote numbers by this
+
+# User agent to use when fetching historical poll data
+USER_AGENT_STR = "Electobot PollScrape http://github.com/ZsigE/electobot"
 
 # Logging
 LOGS_DIR = "logs"

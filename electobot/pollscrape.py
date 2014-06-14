@@ -10,7 +10,7 @@ Poll data scraper
 
 # Python imports
 import logging
-import urllib
+import urllib2
 import datetime
 import json
 
@@ -18,7 +18,7 @@ import json
 from bs4 import BeautifulSoup
 
 # Electobot imports
-import utils
+import electobot.utils as utils
 from electobot.constants import *
     
 # Set up logging
@@ -58,6 +58,9 @@ class PollScrape(object):
             # Now convert those into a support dictionary.
             self.support = utils.calculate_support(votes)
             
+            # Initialize somewhere to store the MonteCarlo results of this poll.
+            self.mc_results = None
+            
             return
         
         def __eq__(self, other):
@@ -79,7 +82,9 @@ class PollScrape(object):
         """Get the UK Polling Report historical poll page and parse it to
         extract the historical polling data table in XML."""
         
-        pollpage = urllib.urlopen(WIKI_POLLS_URL).read()
+        request = urllib2.Request(WIKI_POLLS_URL)
+        request.add_header("user-Agent", USER_AGENT_STR)
+        pollpage = urllib2.urlopen(request).read()
         json_page = json.loads(pollpage)
         tree = BeautifulSoup(json_page["parse"]["text"]["*"])
         

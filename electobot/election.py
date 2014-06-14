@@ -15,7 +15,7 @@ from operator import attrgetter
 
 # Electobot imports
 import electobot.csvparser as csvparser
-import utils
+import electobot.utils as utils
 from electobot.constants import *
 from electobot.candidate import Candidate
 from electobot.constituency import Constituency
@@ -183,9 +183,9 @@ class Election(object):
         self.result.largest_party = party_list[0].name
         self.result.most_seats_won = party_list[0].seats
 
-        # Also determine the runner-up and third-place parties.
-        self.result.runner_up = party_list[1].name
-        self.result.third_place = party_list[2].name
+        # Save off the numbers of seats gained by all parties.
+        for party in self.parties:
+            self.result.seats[party] = self.parties[party].seats
                 
         # Now determine whether the largest party is past or behind the winning
         # line (and by how much).
@@ -243,6 +243,7 @@ class Election(object):
         # figures?
         overall_support = utils.calculate_support(votes)
         support_2010 = self.calculate_overall_support(2010)
+        self.result.support = overall_support
         for party in self.predicted_support:
             divergence = abs(self.predicted_support[party] - 
                              overall_support[party])
@@ -290,9 +291,8 @@ class Result(object):
         
         self.summary = ""  # One-line summary of the election result
         self.winner = None  # None represents a hung parliament
+        self.seats = {}
         self.largest_party = None
-        self.runner_up = None
-        self.third_place = None
         self.most_votes_party = None
         self.margin_of_victory = 0
         self.most_seats_won = 0
@@ -302,4 +302,5 @@ class Result(object):
         self.seat_winner_is_pop_winner = False   
         
         # Internal diagnostics
+        self.support = None
         self.result_too_divergent = False
