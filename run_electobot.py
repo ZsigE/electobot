@@ -163,10 +163,12 @@ def run_electobot():
             logger.debug(str(poll.support))
             elect.predicted_support = poll.support
             poll.result = montecarlo.run_multithreaded_montecarlo(elect, iter)
-        
-        polls_to_save = saved_polls + list(polls_to_calculate)
-        with open(opts.savefile, "w") as pickle_file:
-            pickle.dump(polls_to_save, pickle_file)
+            saved_polls.append(poll)
+            
+            # Update the saved polls list after every run in case it gets
+            # interrupted.
+            with open(opts.savefile, "w") as pickle_file:
+                pickle.dump(saved_polls, pickle_file)
                         
     else:    
         # Fill in the support for each party from the command-line arguments.

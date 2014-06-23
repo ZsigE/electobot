@@ -231,7 +231,7 @@ def run_multithreaded_montecarlo(election, iterations):
         while len(results) < iterations:
             logger.info("Results so far: {0} of {1}".format(len(results),
                                                             iterations))
-            res = results_queue.get(block=True, timeout=10)
+            res = results_queue.get(block=True, timeout=RESULTS_TIMEOUT)
             if not res.result_too_divergent:
                 results.append(res)
             else:

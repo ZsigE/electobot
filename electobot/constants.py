@@ -47,6 +47,9 @@ SWING_SCALE_FACTOR = 1.0 # Scale the amount of variance in vote numbers by this
 # User agent to use when fetching historical poll data
 USER_AGENT_STR = "Electobot PollScrape http://github.com/ZsigE/electobot"
 
+# Results timeout.  Set this to None on very slow machines.
+RESULTS_TIMEOUT = 10
+
 # Logging
 LOGS_DIR = "logs"
 LOG_FILE = os.path.join(LOGS_DIR, "electobot.log")
