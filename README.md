@@ -5,9 +5,12 @@ electobot
 Electobot provides election results analysis for UK General Elections. Its aim is to make it possible to predict the outcome of the 2015 General Election based on polling data, with greater accuracy than can be provided by a [Uniform National Swing](http://en.wikipedia.org/wiki/Uniform_national_swing) projection.
 
 ## What do I need to run it?
+### If you want to simulate elections...
 The only dependency right now is Python 2.7. Electobot should run on any platform for which Python 2.7 has been released, although it's only been tested on Windows so far.
+### If you want to visualize the results...
+You'll also need [matplotlib](http://matplotlib.org/) and [numpy](http://www.numpy.org/).
 
-Once you have the code, run `python run_electobot.py -h` to see the available options for running simulations.
+Once you have the code and any dependencies, run `python run_electobot.py -h` to see the available options for running simulations.
 
 ## What still needs doing?
 Plenty! Right now Electobot can simulate the outcome of an election based on polling data, and can also run a [Monte Carlo simulation](http://en.wikipedia.org/wiki/Monte_Carlo_method) to apply some random variation. Still to do:

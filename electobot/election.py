@@ -186,6 +186,10 @@ class Election(object):
         # Save off the numbers of seats gained by all parties.
         for party in self.parties:
             self.result.seats[party] = self.parties[party].seats
+            
+        # Record zero seats for any party that didn't get any.
+        for party in (set(PARTY_NAMES) - set(self.parties)):
+            self.result.seats[party] = 0
                 
         # Now determine whether the largest party is past or behind the winning
         # line (and by how much).

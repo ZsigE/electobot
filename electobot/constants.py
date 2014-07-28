@@ -23,6 +23,20 @@ BNP = "BNP"
 UKP = "UKIP"
 OTH = "Other"
 
+# List of all party names
+PARTY_NAMES = [CON, LAB, LD, SNP, PC, GRN, BNP, UKP, OTH]
+
+# Colours to represent each party, in matplotlib colour identifiers
+PARTY_COLOURS = {CON: "b",
+                 LAB: "r",
+                 LD:  "Orange",
+                 SNP: "y",
+                 PC:  "DarkGreen",
+                 GRN: "g",
+                 BNP: "Indigo",
+                 UKP: "Purple",
+                 OTH: "Gray"}
+
 # Data CSV file paths
 RESOURCE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                             "..",
@@ -40,9 +54,9 @@ NUM_OF_CONSTITUENCIES = 649
 NEEDED_FOR_MAJORITY = int(math.ceil(NUM_OF_CONSTITUENCIES / 2)) 
 
 # Tuning parameters for the model
-RESULT_TOLERANCE = 0.02 # In percentage points divided by 100
+RESULT_TOLERANCE = 0.03 # In percentage points divided by 100
 SUPPORT_VARIATION = 0.005 # Also in percentage points
-SWING_SCALE_FACTOR = 1.0 # Scale the amount of variance in vote numbers by this
+SWING_SCALE_FACTOR = 70.0 # Scale the amount of variance in vote numbers by this
 
 # User agent to use when fetching historical poll data
 USER_AGENT_STR = "Electobot PollScrape http://github.com/ZsigE/electobot"

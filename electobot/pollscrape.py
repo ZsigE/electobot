@@ -25,52 +25,73 @@ from electobot.constants import *
 logger = logging.getLogger("electobot.pollscrape")
 
 # Classes
+class Poll(object):
+    """Historical poll data."""
+    
+    def __init__(self, 
+                 datestr, 
+                 pollster, 
+                 sponsor, 
+                 sample_size, 
+                 con, lab, lib, ukip):
+        """Constructor.  Store off data."""
+        
+        # Store off the easy stuff.
+        self.pollster = pollster
+        self.sponsor = sponsor
+        self.sample_size = sample_size
+        
+        # Parse the date string into a date object for easy sorting.
+        self.date = datetime.datetime.strptime(datestr, '%d %b %Y')
+        
+        # Store all the vote percentages as if they were votes from a total
+        # turnout of 100.
+        votes = {CON: con,
+                 LAB: lab,
+                 LD: lib,
+                 UKP: ukip}
+        votes[OTH] = 100 - sum(votes.values())
+        
+        # Now convert those into a support dictionary.
+        self.support = utils.calculate_support(votes)
+        
+        # Initialize somewhere to store the MonteCarlo results of this poll.
+        self.mc_results = None
+        
+        return
+    
+    def __eq__(self, other):
+        """Equality operator.  Note that although we don't compare the support
+        dictionary, this should be fine because no pollster will run multiple
+        polls on the same date and for the same sponsor."""
+        
+        return (self.pollster == other.pollster and
+                self.sponsor == other.sponsor and
+                self.date == other.date)
+        
+    def __hash__(self):
+        """Hash this object, so it can be used in a set properly.  This is
+        necessary because the default hash() function on a Poll instance,
+        somewhat ridiculously, returns its id."""
+        
+        return (hash(self.pollster) + hash(self.sponsor) + hash(self.date))
+        
+    def __repr__(self):
+        """Representation of this object."""
+        
+        datestr = self.date.strftime('%d %b %Y')
+        return ("{0}(datestr={1}, pollster={2}, sponsor={3}, sample_size={4}, "
+                "support={5})".
+                format(self.__class__.__name__,
+                       datestr,
+                       self.pollster,
+                       self.sponsor,
+                       self.sample_size,
+                       repr(self.support)))
+        
 class PollScrape(object):
     """Web scraper to generate historical poll support data"""
     
-    class Poll(object):
-        """Historical poll data."""
-        
-        def __init__(self, 
-                     datestr, 
-                     pollster, 
-                     sponsor, 
-                     sample_size, 
-                     con, lab, lib, ukip):
-            """Constructor.  Store off data."""
-            
-            # Store off the easy stuff.
-            self.pollster = pollster
-            self.sponsor = sponsor
-            self.sample_size = sample_size
-            
-            # Parse the date string into a date object for easy sorting.
-            self.date = datetime.datetime.strptime(datestr, '%d %b %Y')
-            
-            # Store all the vote percentages as if they were votes from a total
-            # turnout of 100.
-            votes = {CON: con,
-                     LAB: lab,
-                     LD: lib,
-                     UKP: ukip}
-            votes[OTH] = 100 - sum(votes.values())
-            
-            # Now convert those into a support dictionary.
-            self.support = utils.calculate_support(votes)
-            
-            # Initialize somewhere to store the MonteCarlo results of this poll.
-            self.mc_results = None
-            
-            return
-        
-        def __eq__(self, other):
-            """Equality operator."""
-            
-            return (self.pollster == other.pollster and
-                    self.sponsor == other.sponsor and
-                    self.date == other.date and
-                    self.support == other.support)
-        
     def __init__(self):
         """Constructor.  Initialise data structure."""
         
@@ -130,11 +151,11 @@ class PollScrape(object):
                 lib = int(cells[5].string.replace("%", ""))
                 ukip = int(cells[6].string.replace("%", ""))
                 
-                poll = self.Poll(datestr,
-                                 pollster, 
-                                 sponsor,
-                                 sample_size, 
-                                 con, lab, lib, ukip)
+                poll = Poll(datestr,
+                            pollster, 
+                            sponsor,
+                            sample_size, 
+                            con, lab, lib, ukip)
                 self.polls.append(poll)
             
         return

@@ -135,7 +135,7 @@ class MonteCarloResult(object):
         # each party.
         for party in self.seats.keys():
             self.mean_seats[party] = (sum(self.seats[party]) / 
-                                      len(self.seats[party]))
+                                      float(len(self.seats[party])))
             self.stddev_seats[party] = utils.std_dev(self.seats[party])
             
         return
