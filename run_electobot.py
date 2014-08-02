@@ -12,6 +12,7 @@ Main module
 import argparse
 import cPickle as pickle
 import logging
+import sys
 
 # Electobot imports
 import electobot.election as election
@@ -45,12 +46,12 @@ def run_electobot():
                         dest="debug")
     
     fileopts = parser.add_argument_group("File options")
-    fileopts.add_argument("--pickle", "-p",
-                          help="File containing pickled results data",
+    fileopts.add_argument("--loadfile", "-p",
+                          help="File containing saved-off results data",
                           action="store",
                           dest="pickle")
     fileopts.add_argument("--savefile", "-s", 
-                          help="Filename for saving pickled results data",
+                          help="Filename for saving results data",
                           action="store",
                           dest="savefile")
     
@@ -122,7 +123,7 @@ def run_electobot():
     
     chartopts = parser.add_argument_group("Data visualisation options")
     chartopts.add_argument("--chart-type",
-                           help="Type of chart to create (options: pie)",
+                           help="Type of chart to create (options: pie, line)",
                            action="store",
                            type=str,
                            default="",
@@ -150,7 +151,19 @@ def run_electobot():
     # Guardian data instead.
     elect.add_total_2010_votes()
     
-    if opts.newpolls:
+    if opts.charttype == "line":
+        # Generating a line chart from saved data.
+        assert opts.pickle is not None, "No saved results file specified"
+        assert opts.chartloc != "", "No chart filename specified"
+        with open(opts.pickle, "r") as loadfile:
+            savedpolls = pickle.load(loadfile)
+        
+        # Do the plotting import here to avoid making matplotlib a dependency
+        # unless absolutely necessary
+        import electobot.electoplot as plot
+        
+        plot.create_line_range_chart(savedpolls, opts.chartloc)
+    elif opts.newpolls:
         # Fetch new polling data from the internet and simulate any that isn't
         # already in our saved data.
         assert opts.savefile is not None,  \
@@ -188,7 +201,8 @@ def run_electobot():
             # interrupted.
             with open(opts.savefile, "w") as pickle_file:
                 pickle.dump(saved_polls, pickle_file)
-                        
+        
+        logger.info("Completed generating from new polls")
     else:    
         # Fill in the support for each party from the command-line arguments.
         elect.predicted_support = {
@@ -202,25 +216,25 @@ def run_electobot():
                                    UKP: opts.ukip,
                                   }
         
-    elect.prepare_predicted_support() 
-            
-    if opts.single_election:
-        assert elect is not None, "No election data to work with"
-        elect.run()
-        print elect.result.summary
-        if opts.charttype == "pie":
-            # Do the plotting import here to avoid making matplotlib a
-            # dependency unless absolutely necessary
-            import electobot.electoplot as plot
-            plot.create_pie_chart(elect.result.seats, opts.chartloc)
-            
-    elif opts.iterations > 0:
-        assert elect is not None, "No election data to work with"
-        mc_result = montecarlo.run_multithreaded_montecarlo(elect,
-                                                            opts.iterations)
-        mc_result.report()
-            
-    return
+        elect.prepare_predicted_support() 
+                
+        if opts.single_election:
+            assert elect is not None, "No election data to work with"
+            elect.run()
+            print elect.result.summary
+            if opts.charttype == "pie":
+                # Do the plotting import here to avoid making matplotlib a
+                # dependency unless absolutely necessary
+                import electobot.electoplot as plot
+                plot.create_pie_chart(elect.result.seats, opts.chartloc)
+                
+        elif opts.iterations > 0:
+            assert elect is not None, "No election data to work with"
+            mc_result = montecarlo.run_multithreaded_montecarlo(elect,
+                                                                opts.iterations)
+            mc_result.report()
+                
+        return
     
 if __name__ == "__main__":
     run_electobot()    
