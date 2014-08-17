@@ -49,7 +49,13 @@ def create_pie_chart(results, filepath):
     
     return
 
-def create_line_range_chart(savedpolls, filepath):
+def create_line_range_chart(savedpolls, 
+                            filepath, 
+                            pollsters=None, 
+                            sponsors=None,
+                            min_sample_size=None, 
+                            start_date=None, 
+                            end_date=None):
     """Generate a line chart from a series of pollscrape Polls, with dates along
     the x-axis, and one line per party.  Also error bars for each result's 95%
     confidence intervals."""
@@ -59,14 +65,41 @@ def create_line_range_chart(savedpolls, filepath):
     logger.info("Found {0} results, first from {1}, last from {2}".
                 format(len(polls), polls[0].date, polls[-1].date))
     
+    # Select the polls we want based on the various filter critera specified.
+    # Assume that the poll is going to be included unless filtered out.
+    polls_to_chart = []
+    for poll in polls:
+        if pollsters is not None and poll.pollster not in pollsters:
+            logger.debug("Poll filtered out on pollster ({0})".
+                         format(poll.pollster))
+            continue
+        elif sponsors is not None and poll.sponsor not in sponsors:
+            logger.debug("Poll filtered out on sponsor ({0})".
+                         format(poll.sponsor))
+            continue
+        elif min_sample_size is not None and poll.sample_size < min_sample_size:
+            logger.debug("Poll filtered out on sample size ({0})".
+                         format(poll.sample_size))
+            continue
+        elif start_date is not None and poll.date < start_date:
+            logger.debug("Poll filtered out by start date ({0})".
+                         format(poll.date))
+            continue
+        elif end_date is not None and poll.date > end_date:
+            logger.debug("Poll filtered out by end date ({0})".
+                         format(poll.date))
+            continue
+        else:
+            polls_to_chart.append(poll)
+    
     # Generate the various arrays that we'll need to plot these results.
-    dates = [poll.date for poll in polls]
+    dates = [poll.date for poll in polls_to_chart]
     party_mean_seats = {}
     party_seat_error = {}
     for party in PARTY_NAMES:
         party_mean_seats[party] = []
         party_seat_error[party] = []
-    for poll in polls:
+    for poll in polls_to_chart:
         for party in PARTY_NAMES:
             party_mean_seats[party].append(poll.result.mean_seats[party])
             
@@ -79,11 +112,30 @@ def create_line_range_chart(savedpolls, filepath):
     
     # Generate lines with error bars for all parties.
     for party in PARTY_NAMES:
+        logger.debug("Adding line for {0}".format(party))
+        logger.debug("  Line colour: {0}".format(PARTY_COLOURS[party]))
         axes.errorbar(dates, 
                       party_mean_seats[party],
                       yerr=party_seat_error[party],
-                      mfc=PARTY_COLOURS[party],
-                      mec=PARTY_COLOURS[party])
+                      color=PARTY_COLOURS[party])
+     
+    # Tweak the axis limits to ensure the y-axis starts at 0 and there's a gap
+    # after the last results.
+    limits = list(plt.axis())
+    limits[1] += 10
+    limits[2] = 0
+    plt.axis(limits)
+    
+    # Rotate the x-axis labels to stop them clashing.
+    locs, labels = plt.xticks()
+    plt.setp(labels, rotation=45) 
+    
+    # Increase the size of the figure to accommodate these labels.
+    fig = plt.gcf()
+    fig.set_size_inches(10, 8)
+        
+    # Add a horizontal line at the winning mark.
+    plt.axhline(NEEDED_FOR_MAJORITY, color="black", linewidth=1)
     
     # Save off the chart.
     filename = "{0}.png".format(filepath)

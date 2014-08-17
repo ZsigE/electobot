@@ -13,6 +13,7 @@ import argparse
 import cPickle as pickle
 import logging
 import sys
+import datetime
 
 # Electobot imports
 import electobot.election as election
@@ -134,6 +135,35 @@ def run_electobot():
                            type=str,
                            default="",
                            dest="chartloc")
+    chartopts.add_argument("--start-date",
+                           help="Chart results from this date onwards "
+                                                                 "(YYYY-MM-DD)",
+                           action="store",
+                           default=None,
+                           dest="startdate")
+    chartopts.add_argument("--end-date",
+                           help="Chart results up to and including this date "
+                                                                 "(YYYY-MM-DD)",
+                           action="store",
+                           default=None,
+                           dest="enddate")
+    chartopts.add_argument("--pollsters",
+                           help="Comma-separated list of pollsters to include",
+                           action="store",
+                           default=None,
+                           dest="pollsters")
+    chartopts.add_argument("--sponsors",
+                           help="Comma-separated list of sponsors to include",
+                           action="store",
+                           default=None,
+                           dest="sponsors")
+    chartopts.add_argument("--min-sample-size",
+                           help="Minimum sample size of poll to include",
+                           action="store",
+                           type=int,
+                           default=0,
+                           dest="minsamplesize")
+    
 
     opts = parser.parse_args()
         
@@ -162,7 +192,35 @@ def run_electobot():
         # unless absolutely necessary
         import electobot.electoplot as plot
         
-        plot.create_line_range_chart(savedpolls, opts.chartloc)
+        # If dates have been provided, convert them to datetimes.
+        if opts.startdate is not None:
+            startdate = datetime.datetime.strptime(opts.startdate, "%Y-%m-%d")
+        else:
+            startdate = None
+            
+        if opts.enddate is not None:
+            enddate = datetime.datetime.strptime(opts.enddate, "%Y-%m-%d")
+        else:
+            enddate = None
+
+        # If pollsters or sponsors have been provided, convert them to lists.
+        if opts.pollsters is not None:
+            pollsters = opts.pollsters.split(",")
+        else:
+            pollsters = None
+            
+        if opts.sponsors is not None:
+            sponsors = opts.sponsors.split(",")
+        else:
+            sponsors = None
+                
+        plot.create_line_range_chart(savedpolls, 
+                                     opts.chartloc,
+                                     start_date=startdate,
+                                     end_date=enddate,
+                                     min_sample_size=opts.minsamplesize,
+                                     pollsters=pollsters,
+                                     sponsors=sponsors)
     elif opts.newpolls:
         # Fetch new polling data from the internet and simulate any that isn't
         # already in our saved data.

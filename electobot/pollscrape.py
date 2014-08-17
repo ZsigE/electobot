@@ -100,7 +100,7 @@ class PollScrape(object):
         return
     
     def fetch_poll_xml(self):
-        """Get the UK Polling Report historical poll page and parse it to
+        """Get the Wikipedia polling page and parse it to
         extract the historical polling data table in XML."""
         
         request = urllib2.Request(WIKI_POLLS_URL)
@@ -157,6 +157,8 @@ class PollScrape(object):
                             sample_size, 
                             con, lab, lib, ukip)
                 self.polls.append(poll)
+                
+        logger.info("Got {0} polls from remote source".format(len(self.polls)))
             
         return
     
