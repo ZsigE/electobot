@@ -172,15 +172,6 @@ def run_electobot():
     else:
         logger.setLevel(LOG_LEVEL)
     
-    # Populate the election from the CSV data file.
-    elect = election.Election()
-    elect.populate_from_csv()
-    
-    # For no apparent reason, the Harvard data does not include the total
-    # votes cast in each constituency in 2010.  Fill this in from the 
-    # Guardian data instead.
-    elect.add_total_2010_votes()
-    
     if opts.charttype == "line":
         # Generating a line chart from saved data.
         assert opts.pickle is not None, "No saved results file specified"
@@ -189,7 +180,7 @@ def run_electobot():
             savedpolls = pickle.load(loadfile)
         
         # Do the plotting import here to avoid making matplotlib a dependency
-        # unless absolutely necessary
+        # unless absolutely necessary.
         import electobot.electoplot as plot
         
         # If dates have been provided, convert them to datetimes.
@@ -221,76 +212,88 @@ def run_electobot():
                                      min_sample_size=opts.minsamplesize,
                                      pollsters=pollsters,
                                      sponsors=sponsors)
-    elif opts.newpolls:
-        # Fetch new polling data from the internet and simulate any that isn't
-        # already in our saved data.
-        assert opts.savefile is not None,  \
-            "No filename specified for saving results"
-        if opts.iterations == 0:
-            logger.info("No number of iterations specified, using 1000")
-            iter = 1000
-        else:
-            iter = opts.iterations
+    else:
+        # Populate the election from the CSV data file.
+        elect = election.Election()
+        elect.populate_from_csv()
         
-        if opts.pickle is not None:
-            with open(opts.pickle, "r") as pickle_file:
-                saved_polls = pickle.load(pickle_file)
-                logger.info("Loaded {0} saved polls from file".
-                            format(len(saved_polls)))
-        else:
-            saved_polls = []
+        # For no apparent reason, the Harvard data does not include the total
+        # votes cast in each constituency in 2010.  Fill this in from the 
+        # Guardian data instead.
+        elect.add_total_2010_votes()
+        
+        if opts.newpolls:
+            # Fetch new polling data from the internet and simulate any that 
+            # isn't already in our saved data.
+            assert opts.savefile is not None,  \
+                "No filename specified for saving results"
+            if opts.iterations == 0:
+                logger.info("No number of iterations specified, using 1000")
+                iter = 1000
+            else:
+                iter = opts.iterations
             
-        scraper = pollscrape.PollScrape()
-        scraper.create_polls_from_table()
-        
-        # Calculate only those polls that aren't already in our dataset.
-        polls_to_calculate = set(scraper.polls) - set(saved_polls)
-        for index, poll in enumerate(polls_to_calculate, start=1):
-            logger.info("Running poll {0} of {1}".
+            if opts.pickle is not None:
+                with open(opts.pickle, "r") as pickle_file:
+                    saved_polls = pickle.load(pickle_file)
+                    logger.info("Loaded {0} saved polls from file".
+                                format(len(saved_polls)))
+            else:
+                saved_polls = []
+                
+            scraper = pollscrape.PollScrape()
+            scraper.create_polls_from_table()
+            
+            # Calculate only those polls that aren't already in our dataset.
+            polls_to_calculate = set(scraper.polls) - set(saved_polls)
+            for index, poll in enumerate(polls_to_calculate, start=1):
+                logger.info("Running poll {0} of {1}".
                                                 format(index, 
                                                        len(polls_to_calculate)))
-            logger.debug("Running poll with following support:")
-            logger.debug(str(poll.support))
-            elect.predicted_support = poll.support
-            poll.result = montecarlo.run_multithreaded_montecarlo(elect, iter)
-            saved_polls.append(poll)
+                logger.debug("Running poll with following support:")
+                logger.debug(str(poll.support))
+                elect.predicted_support = poll.support
+                poll.result = montecarlo.run_multithreaded_montecarlo(elect, 
+                                                                      iter)
+                saved_polls.append(poll)
+                
+                # Update the saved polls list after every run in case it gets
+                # interrupted.
+                with open(opts.savefile, "w") as pickle_file:
+                    pickle.dump(saved_polls, pickle_file)
             
-            # Update the saved polls list after every run in case it gets
-            # interrupted.
-            with open(opts.savefile, "w") as pickle_file:
-                pickle.dump(saved_polls, pickle_file)
-        
-        logger.info("Completed generating from new polls")
-    else:    
-        # Fill in the support for each party from the command-line arguments.
-        elect.predicted_support = {
-                                   CON: opts.conservative,
-                                   LAB: opts.labour,
-                                   LD: opts.libdem,
-                                   SNP: opts.snp,
-                                   PC: opts.plaid,
-                                   GRN: opts.green,
-                                   BNP: opts.bnp,
-                                   UKP: opts.ukip,
-                                  }
-        
-        elect.prepare_predicted_support() 
-                
-        if opts.single_election:
-            assert elect is not None, "No election data to work with"
-            elect.run()
-            print elect.result.summary
-            if opts.charttype == "pie":
-                # Do the plotting import here to avoid making matplotlib a
-                # dependency unless absolutely necessary
-                import electobot.electoplot as plot
-                plot.create_pie_chart(elect.result.seats, opts.chartloc)
-                
-        elif opts.iterations > 0:
-            assert elect is not None, "No election data to work with"
-            mc_result = montecarlo.run_multithreaded_montecarlo(elect,
+            logger.info("Completed generating from new polls")
+        else:    
+            # Fill in the support for each party from the command-line 
+            # arguments.
+            elect.predicted_support = {
+                                       CON: opts.conservative,
+                                       LAB: opts.labour,
+                                       LD: opts.libdem,
+                                       SNP: opts.snp,
+                                       PC: opts.plaid,
+                                       GRN: opts.green,
+                                       BNP: opts.bnp,
+                                       UKP: opts.ukip,
+                                      }
+            
+            elect.prepare_predicted_support() 
+                    
+            if opts.single_election:
+                assert elect is not None, "No election data to work with"
+                elect.run()
+                print elect.result.summary
+                if opts.charttype == "pie":
+                    # Do the plotting import here to avoid making matplotlib a
+                    # dependency unless absolutely necessary
+                    import electobot.electoplot as plot
+                    plot.create_pie_chart(elect.result.seats, opts.chartloc)
+                    
+            elif opts.iterations > 0:
+                assert elect is not None, "No election data to work with"
+                mc_result = montecarlo.run_multithreaded_montecarlo(elect,
                                                                 opts.iterations)
-            mc_result.report()
+                mc_result.report()
                 
         return
     

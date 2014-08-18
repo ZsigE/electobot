@@ -30,7 +30,7 @@ PARTY_NAMES = [CON, LAB, LD, SNP, PC, GRN, BNP, UKP, OTH]
 PARTY_COLOURS = {CON: "b",
                  LAB: "r",
                  LD:  "Orange",
-                 SNP: "y",
+                 SNP: "Yellow",
                  PC:  "DarkGreen",
                  GRN: "g",
                  BNP: "Indigo",

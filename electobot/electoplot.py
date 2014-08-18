@@ -117,7 +117,8 @@ def create_line_range_chart(savedpolls,
         axes.errorbar(dates, 
                       party_mean_seats[party],
                       yerr=party_seat_error[party],
-                      color=PARTY_COLOURS[party])
+                      color=PARTY_COLOURS[party],
+                      label=party)
      
     # Tweak the axis limits to ensure the y-axis starts at 0 and there's a gap
     # after the last results.
@@ -130,13 +131,17 @@ def create_line_range_chart(savedpolls,
     locs, labels = plt.xticks()
     plt.setp(labels, rotation=45) 
     
-    # Increase the size of the figure to accommodate these labels.
-    fig = plt.gcf()
-    fig.set_size_inches(10, 8)
-        
     # Add a horizontal line at the winning mark.
     plt.axhline(NEEDED_FOR_MAJORITY, color="black", linewidth=1)
     
+    # Add a legend.
+    plt.legend(loc="upper center", ncol=3, bbox_to_anchor=(0.5, 1.16))
+    
+    # Increase the size of the figure to accommodate these elements.
+    fig = plt.gcf()
+    fig.set_size_inches(10, 8)
+    fig.subplots_adjust(bottom=0.15, top=0.85)
+            
     # Save off the chart.
     filename = "{0}.png".format(filepath)
     plt.savefig(filename)
