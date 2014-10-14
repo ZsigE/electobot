@@ -95,6 +95,8 @@ class MonteCarloResult(object):
         self.greens_hold_brighton_count = 0
         self.seat_winner_is_pop_winner_count = 0
         self.margins_of_victory = []
+        self.ukip_stealth_targets = {}
+        self.possible_coalitions = {}
         
         return
     
@@ -131,6 +133,20 @@ class MonteCarloResult(object):
             if result.seat_winner_is_pop_winner:
                 self.seat_winner_is_pop_winner_count += 1
                 
+            for tgt in result.ukip_stealth_targets:
+                if tgt in self.ukip_stealth_targets:
+                    self.ukip_stealth_targets[tgt].append(result.
+                                                      ukip_stealth_targets[tgt])
+                else:
+                    self.ukip_stealth_targets[tgt] = [result.
+                                                      ukip_stealth_targets[tgt]]
+
+            for coal in result.possible_coalitions:
+                if coal in self.possible_coalitions:
+                    self.possible_coalitions[coal] += 1
+                else:
+                    self.possible_coalitions[coal] = 1
+                
         # Calculate the mean and standard deviation of the number of seats for
         # each party.
         for party in self.seats.keys():
@@ -160,6 +176,15 @@ class MonteCarloResult(object):
             print "  {0}: {1}%".format(party_name,
                                 get_result_percentage(self.win_counts[party[0]],
                                                       self.num_of_results))
+            
+        if len(self.possible_coalitions) > 0:
+            print "Feasible coalitions in hung parliaments:"
+            for coal in sorted(self.possible_coalitions.items(),
+                               key=itemgetter(1),
+                               reverse=True):
+                print "  {0} ({1:.1f}%)".format(coal[0],
+                                  (float(coal[1]) /
+                                  sum(self.possible_coalitions.values())) * 100)
         
         print "Largest-party percentages:"
         for party in sorted(self.largest_party_counts.keys()):
@@ -190,6 +215,15 @@ class MonteCarloResult(object):
                "{0}% of runs".format(get_result_percentage(
                                                 self.greens_hold_brighton_count,
                                                 self.num_of_results)))
+        
+        if len(self.ukip_stealth_targets) > 0:
+            print "Most common UKIP stealth targets:"
+        for tgt in sorted(self.ukip_stealth_targets.items(),
+                          key=lambda x: sum(x[1]),
+                          reverse=True):
+            print "  {0} (mean CON majority {1:.1f})".format(tgt[0],
+                                                            (float(sum(tgt[1]))/
+                                                            len(tgt[1])))
         
         return
 

@@ -205,6 +205,30 @@ class Election(object):
                                             self.result.largest_party,
                                             (0 - self.result.margin_of_victory))
             
+            # Work out the coalitions that could conceivably take power.  The
+            # expected rules for this are as follows:
+            # - A coalition always has CON or LAB as the senior partner
+            # - Both CON and LAB will take LD as their preferred junior partner
+            # - Only CON will take UKP as a junior partner
+            # - Only LAB will take GRN as a junior partner
+            # - LD and GRN will not join a coalition that includes UKP
+            if (self.result.seats[CON] + self.result.seats[LD] >=
+                NEEDED_FOR_MAJORITY):
+                self.result.possible_coalitions.append("CON-LD")
+            elif (self.result.seats[CON] + self.result.seats[UKP] >=
+                  NEEDED_FOR_MAJORITY):
+                self.result.possible_coalitions.append("CON-UKP")
+                
+            if (self.result.seats[LAB] + self.result.seats[LD] >=
+                NEEDED_FOR_MAJORITY):
+                self.result.possible_coalitions.append("LAB-LD")
+            elif (self.result.seats[LAB] + self.result.seats[LD] + 
+                  self.result.seats[GRN] >= NEEDED_FOR_MAJORITY):
+                self.result.possible_coalitions.append("LAB-LD-GRN")
+                
+            if len(self.result.possible_coalitions) == 0:
+                self.result.possible_coalitions = ["NONE"]
+            
         # Did UKIP win any seats in this election?
         if UKP in self.parties:
             self.result.ukip_seats = self.parties[UKP].seats
@@ -232,7 +256,7 @@ class Election(object):
                     votes[party] = const.sim_votes[party]
                 else:
                     votes[party] += const.sim_votes[party]
-                    
+        
         most_votes = 0
         self.result.most_votes_party = None
         for party in votes.keys():
@@ -242,6 +266,21 @@ class Election(object):
                 
         self.result.seat_winner_is_pop_winner = (self.result.largest_party ==
                                                  self.result.most_votes_party)
+        
+        # Find all the constituencies where the Conservatives are predicted
+        # to win heavily, but UKIP did not field a candidate in 2010 - these
+        # are the UKIP stealth targets, where they could win much more
+        # easily than expected.
+        no_ukips = [self.constituencies[cons] for cons in self.constituencies if 
+                    self.constituencies[cons].votes_2010[UKP] == 0]
+        con_win_no_ukip = [cons for cons in no_ukips if 
+                            cons.winning_party == CON]
+        for cons in con_win_no_ukip:
+            vote_counts = sorted(cons.sim_votes.values(),
+                                     reverse=True)
+            margin = vote_counts[0] - vote_counts[1]
+            if margin > 1000:
+                self.result.ukip_stealth_targets[cons.name] = margin
         
         # Was the vote distribution sufficiently close to the initial support
         # figures?
@@ -303,7 +342,9 @@ class Result(object):
         self.ukip_seats = 0  
         self.libdem_seats = 0  
         self.greens_hold_brighton = False
-        self.seat_winner_is_pop_winner = False   
+        self.seat_winner_is_pop_winner = False
+        self.ukip_stealth_targets = {}
+        self.possible_coalitions = []   
         
         # Internal diagnostics
         self.support = None

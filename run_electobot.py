@@ -283,6 +283,14 @@ def run_electobot():
                 assert elect is not None, "No election data to work with"
                 elect.run()
                 print elect.result.summary
+                if len(elect.result.ukip_stealth_targets) > 0:
+                    # Some UKIP stealth targets have been found - print them
+                    # here.
+                    print ("{0} UKIP stealth targets identified:".
+                                 format(len(elect.result.ukip_stealth_targets)))
+                    for tgt in elect.result.ukip_stealth_targets:
+                        print "  {0}: CON majority {1}".format(tgt,
+                                         elect.result.ukip_stealth_targets[tgt])
                 if opts.charttype == "pie":
                     # Do the plotting import here to avoid making matplotlib a
                     # dependency unless absolutely necessary
