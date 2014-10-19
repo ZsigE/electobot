@@ -4,6 +4,9 @@ electobot
 ## What is Electobot?
 Electobot provides election results analysis for UK General Elections. Its aim is to make it possible to predict the outcome of the 2015 General Election based on polling data, with greater accuracy than can be provided by a [Uniform National Swing](http://en.wikipedia.org/wiki/Uniform_national_swing) projection.
 
+## I don't care how it works, what are the results?
+I have now started [a blog](http://electobot.wordpress.com) to answer that very question.
+
 ## What do I need to run it?
 ### If you want to simulate elections...
 The only dependency right now is Python 2.7. Electobot should run on any platform for which Python 2.7 has been released, although it's only been tested on Windows so far.
