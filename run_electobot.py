@@ -303,6 +303,10 @@ def run_electobot():
                                                                 opts.iterations)
                 mc_result.report()
                 
+                if opts.charttype == "bar":
+                    import electobot.electoplot as plot
+                    plot.create_poll_summary_barchart(mc_result, opts.chartloc)
+                
         return
     
 if __name__ == "__main__":
