@@ -110,7 +110,9 @@ def create_line_range_chart(savedpolls,
     # Create axes on which to put this information.
     axes = plt.subplot(1, 1, 1)
     
-    # Generate lines with error bars for all parties.
+    # Generate points with error bars for all parties.  Suppress the line, as
+    # this is misleading or multiple polls from the same day, but add markers 
+    # instead.
     for party in PARTY_NAMES:
         logger.debug("Adding line for {0}".format(party))
         logger.debug("  Line colour: {0}".format(PARTY_COLOURS[party]))
@@ -118,6 +120,8 @@ def create_line_range_chart(savedpolls,
                       party_mean_seats[party],
                       yerr=party_seat_error[party],
                       color=PARTY_COLOURS[party],
+                      linestyle="None",
+                      marker=".",
                       label=party)
      
     # Tweak the axis limits to ensure the y-axis starts at 0 and there's a gap
@@ -135,7 +139,10 @@ def create_line_range_chart(savedpolls,
     plt.axhline(NEEDED_FOR_MAJORITY, color="black", linewidth=1)
     
     # Add a legend.
-    plt.legend(loc="upper center", ncol=3, bbox_to_anchor=(0.5, 1.16))
+    plt.legend(loc="upper center", 
+               ncol=3,
+               numpoints=1, 
+               bbox_to_anchor=(0.5, 1.16))
     
     # Increase the size of the figure to accommodate these elements.
     fig = plt.gcf()
