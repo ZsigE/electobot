@@ -121,6 +121,48 @@ def run_electobot():
                            type=float,
                            default=0.0,
                            dest="bnp")
+    partyopts.add_argument("--scot-con",
+                           help="Predicted percentage of Conservative support "
+                                                                  "in Scotland",
+                           action="store",
+                           type=float,
+                           default=0.0,
+                           dest="scot_con")
+    partyopts.add_argument("--scot-lab",
+                           help="Predicted percentage of Labour support in "
+                                                                     "Scotland",
+                           action="store",
+                           type=float,
+                           default=0.0,
+                           dest="scot_lab")
+    partyopts.add_argument("--scot-libdem",
+                           help="Predicted percentage of Lib-Dem support in "
+                                                                     "scotland",
+                           action="store",
+                           type=float,
+                           default=0.0,
+                           dest="scot_ld")
+    partyopts.add_argument("--scot-green",
+                           help="Predicted percentage of Green support in "
+                                                                     "Scotland",
+                           action="store",
+                           type=float,
+                           default=0.0,
+                           dest="scot_grn")
+    partyopts.add_argument("--scot-ukip",
+                           help="Predicted percentage of UKIP support in "
+                                                                     "Scotland",
+                           action="store",
+                           type=float,
+                           default=0.0,
+                           dest="scot_ukp")
+    partyopts.add_argument("--scot-snp",
+                           help="Predicted percentage of SNP support in "
+                                                                    "Scotland",
+                           action="store",
+                           type=float,
+                           default=0.0,
+                           dest="scot_snp")
     
     chartopts = parser.add_argument_group("Data visualisation options")
     chartopts.add_argument("--chart-type",
@@ -266,18 +308,32 @@ def run_electobot():
         else:    
             # Fill in the support for each party from the command-line 
             # arguments.
-            elect.predicted_support = {
-                                       CON: opts.conservative,
-                                       LAB: opts.labour,
-                                       LD: opts.libdem,
-                                       SNP: opts.snp,
-                                       PC: opts.plaid,
-                                       GRN: opts.green,
-                                       BNP: opts.bnp,
-                                       UKP: opts.ukip,
-                                      }
+            overall_support = {
+                               CON: opts.conservative,
+                               LAB: opts.labour,
+                               LD: opts.libdem,
+                               SNP: opts.snp,
+                               PC: opts.plaid,
+                               GRN: opts.green,
+                               BNP: opts.bnp,
+                               UKP: opts.ukip,
+                              }
             
-            elect.prepare_predicted_support() 
+            elect.predicted_support = elect.prepare_predicted_support(
+                                                                overall_support)
+            
+            if opts.scot_snp > 0:
+                # We have a set of Scotland-only support.  Prepare this as well.
+                scot_support = {
+                                CON: opts.scot_con,
+                                LAB: opts.scot_lab,
+                                LD: opts.scot_ld,
+                                SNP: opts.scot_snp,
+                                GRN: opts.scot_grn,
+                                UKP: opts.scot_ukp
+                               }
+                elect.regional_support = {"Scotland": 
+                                  elect.prepare_predicted_support(scot_support)} 
                     
             if opts.single_election:
                 assert elect is not None, "No election data to work with"
