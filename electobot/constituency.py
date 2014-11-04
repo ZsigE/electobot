@@ -44,7 +44,7 @@ class Constituency(object):
         
         return
     
-    def predict_votes(self, predicted_support):
+    def predict_votes(self, predicted_support, use_regional=False):
         """Make a prediction of the vote distribution in this constituency."""
         
         logger.debug("Predicting votes in {0}".format(self.name))
@@ -59,10 +59,15 @@ class Constituency(object):
         # Now compare the 2010 support to the new national support dictionary  
         # and calculate a swing matrix for that too.
         swing_matrix = utils.calculate_swing(support_2010, predicted_support)
-        
-        # Extract the swing between the national 2010 results and the national
-        # prediction from the parent election.
-        national_swing = self.election.swing_matrix
+          
+        if use_regional:
+            # Extract the swing between the 2010 results for this region and the
+            # predicted results for this region.
+            general_swing = self.election.regional_swing[self.region]
+        else:
+            # Extract the swing between the national 2010 results and the 
+            # national prediction from the parent election.
+            general_swing = self.election.swing_matrix
         
         # Calculate the total number of votes in this constituency in 2010.
         total_votes_2010 = sum(self.votes_2010.values())
@@ -71,7 +76,7 @@ class Constituency(object):
         # they got last time, modified by the total national swing towards that
         # party.
         for party in swing_matrix.keys():
-            vote_diff = int(sum(national_swing[party].values()) *
+            vote_diff = int(sum(general_swing[party].values()) *
                             total_votes_2010)
             logger.debug("{0} vote changes by {1}".format(party, vote_diff))
             self.sim_votes[party] = self.votes_2010[party] + vote_diff

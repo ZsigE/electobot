@@ -12,6 +12,7 @@ Election structure
 import os
 import logging
 from operator import attrgetter
+import copy
 
 # Electobot imports
 import electobot.csvparser as csvparser
@@ -146,13 +147,33 @@ class Election(object):
         self.swing_matrix = utils.calculate_swing(support_2010,
                                                   self.predicted_support)
         
+        # Calculate the regional swing matrix as well.
+        regional_votes = {}
+        for const in self.constituencies.values():
+            if const.region not in regional_votes:
+                regional_votes[const.region] = copy.copy(const.votes_2010)
+            else:
+                for party in const.votes_2010:
+                    if party not in regional_votes[const.region]:
+                        regional_votes[const.region][party] = \
+                                                         const.votes_2010[party]
+                    else:
+                        regional_votes[const.region][party] += \
+                                                         const.votes_2010[party]
+        self.regional_swing = {}
+        for region in self.regional_support.keys():
+            self.regional_swing[region] = utils.calculate_swing(
+                                                  regional_votes[region],
+                                                  self.regional_support[region])
+        
         # Now use that to predict each constituency's vote distribution.
         for const_name in self.constituencies:
             const = self.constituencies[const_name]
             if const.region in self.regional_support:
                 # We have region-specific support information for this 
                 # constituency.  Predict based on that for greater accuracy.
-                const.predict_votes(self.regional_support[const.region])
+                const.predict_votes(self.regional_support[const.region],
+                                    use_regional=True)
             else:
                 # No region-specific support, just use the national support.
                 const.predict_votes(self.predicted_support)
