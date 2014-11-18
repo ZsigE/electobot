@@ -15,6 +15,7 @@ import datetime
 import json
 
 # External imports
+import bs4
 from bs4 import BeautifulSoup
 
 # Electobot imports
@@ -143,7 +144,10 @@ class PollScrape(object):
                     dates = dates.partition(u"\u2013")[2]
                 
                 datestr = "{0} {1}".format(dates, year).strip()
-                label = cells[1].a.string
+                # The first link in the cell is the label, and we want only its
+                # text (no tags from inside it).
+                label = cells[1].a.contents[0]
+                assert isinstance(label, bs4.element.NavigableString)
                 pollster, slash, sponsor = label.partition("/")
                 sample_size = int(cells[2].string.replace(",",""))
                 con = int(cells[3].string.replace("%", ""))

@@ -239,19 +239,57 @@ class Election(object):
             # - Only CON will take UKP as a junior partner
             # - Only LAB will take GRN as a junior partner
             # - LD and GRN will not join a coalition that includes UKP
+            # - SNP will join neither a LAB nor a CON coalition
+            # - PC will join only a LAB coalition
+            # - OTH will join anyone
+            # - Both LAB and CON prefer named parties to OTH
             if (self.result.seats[CON] + self.result.seats[LD] >=
                 NEEDED_FOR_MAJORITY):
                 self.result.possible_coalitions.append("CON-LD")
             elif (self.result.seats[CON] + self.result.seats[UKP] >=
                   NEEDED_FOR_MAJORITY):
-                self.result.possible_coalitions.append("CON-UKP")
+                self.result.possible_coalitions.append("CON-UKP")    
+            elif (self.result.seats[CON] + self.result.seats[LD] + 
+                  self.result.seats[OTH] >= NEEDED_FOR_MAJORITY):
+                self.result.possible_coalitions.append("CON-LD-OTH")
+            elif (self.result.seats[CON] + self.result.seats[OTH] >=
+                  NEEDED_FOR_MAJORITY):
+                self.result.possible_coalitions.append("CON-OTH")    
+            elif (self.result.seats[CON] + self.result.seats[UKP] + 
+                  self.result.seats[OTH] >= NEEDED_FOR_MAJORITY):
+                self.result.possible_coalitions.append("CON-UKP-OTH")
                 
             if (self.result.seats[LAB] + self.result.seats[LD] >=
                 NEEDED_FOR_MAJORITY):
                 self.result.possible_coalitions.append("LAB-LD")
             elif (self.result.seats[LAB] + self.result.seats[LD] + 
+                  self.result.seats[PC] >= NEEDED_FOR_MAJORITY):
+                self.result.possible_coalitions.append("LAB-LD-PC")    
+            elif (self.result.seats[LAB] + self.result.seats[LD] + 
                   self.result.seats[GRN] >= NEEDED_FOR_MAJORITY):
                 self.result.possible_coalitions.append("LAB-LD-GRN")
+            elif (self.result.seats[LAB] + self.result.seats[LD] + 
+                  self.result.seats[GRN] + self.result.seats[PC] >= 
+                  NEEDED_FOR_MAJORITY):
+                self.result.possible_coalitions.append("LAB-LD-PC-GRN")
+            elif (self.result.seats[LAB] + self.result.seats[PC] >=
+                  NEEDED_FOR_MAJORITY):
+                self.result.possible_coalitions.append("LAB-PC")
+            elif (self.result.seats[LAB] + self.result.seats[LD] +
+                  self.result.seats[OTH] >= NEEDED_FOR_MAJORITY):
+                self.result.possible_coalitions.append("LAB-LD-OTH")
+            elif (self.result.seats[LAB] + self.result.seats[LD] + 
+                  self.result.seats[PC] + self.result.seats[OTH] >= 
+                  NEEDED_FOR_MAJORITY):
+                self.result.possible_coalitions.append("LAB-LD-PC-OTH")    
+            elif (self.result.seats[LAB] + self.result.seats[LD] + 
+                  self.result.seats[GRN] + self.result.seats[OTH] >= 
+                  NEEDED_FOR_MAJORITY):
+                self.result.possible_coalitions.append("LAB-LD-GRN-OTH")
+            elif (self.result.seats[LAB] + self.result.seats[LD] + 
+                  self.result.seats[GRN] + self.result.seats[PC] + 
+                  self.result.seats[OTH] >= NEEDED_FOR_MAJORITY):
+                self.result.possible_coalitions.append("LAB-LD-PC-GRN-OTH")
                 
             if len(self.result.possible_coalitions) == 0:
                 self.result.possible_coalitions = ["NONE"]
