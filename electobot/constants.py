@@ -46,8 +46,8 @@ GUARDIAN_CSV = os.path.join(RESOURCE_DIR, "guardian_election_results_2010.csv")
 
 # Wikipedia's historical poll data API URL
 WIKI_POLLS_URL = ("http://en.wikipedia.org/w/api.php?action=parse&prop=text&"
-                  "page=Opinion_polling_for_the_next_United_Kingdom_"
-                  "general_election&format=json")
+                  "page=Opinion_polling_for_the_2015_United_Kingdom_general_"
+                  "election&format=json")
 
 # Constituency numbers (only including those contested in 2010)
 NUM_OF_CONSTITUENCIES = 649

@@ -113,12 +113,13 @@ class PollScrape(object):
         tables = tree.find_all("table")
         
         # There's one table for every year in the polling records.  We only care
-        # about the first two (2014 and 2013), but we want to join those values
+        # about 2015, 2014 and 2013, but we want to join those values
         # together.  Take all the rows after the first (as that's the header).
-        rows_2014 = tables[0].find_all("tr")[1:]
-        rows_2013 = tables[1].find_all("tr")[1:]
+        rows_2015 = tables[0].find_all("tr")[1:]
+        rows_2014 = tables[1].find_all("tr")[1:]
+        rows_2013 = tables[2].find_all("tr")[1:]
         
-        rows = {2014: rows_2014, 2013: rows_2013}
+        rows = {2015: rows_2015, 2014: rows_2014, 2013: rows_2013}
         
         return rows
         
