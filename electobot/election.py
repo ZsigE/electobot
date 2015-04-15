@@ -194,7 +194,7 @@ class Election(object):
                 party = Party(const.winning_party)
                 party.seats = 1
                 self.parties[const.winning_party] = party
-        
+
         return
     
     def analyze(self):
@@ -294,17 +294,13 @@ class Election(object):
             if len(self.result.possible_coalitions) == 0:
                 self.result.possible_coalitions = ["NONE"]
             
-        # Did UKIP win any seats in this election?
-        if UKP in self.parties:
-            self.result.ukip_seats = self.parties[UKP].seats
-        else:
-            self.result.ukip_seats = 0
-        
-        # Did the Lib-Dems?
-        if LD in self.parties:
-            self.result.libdem_seats = self.parties[LD].seats
-        else:
-            self.result.libdem_seats = 0
+        # Which seats, if any, did UKIP/the Lib Dems win in this election?
+        for const_name in self.constituencies:
+            const = self.constituencies[const_name]
+            if const.winning_party == UKP:
+                self.result.ukip_seats.append(const_name)
+            elif const.winning_party == LD:
+                self.result.libdem_seats.append(const_name)
         
         # Did the Greens hold Brighton Pavilion?
         if self.constituencies["Brighton Pavilion"].winning_party == GRN:
@@ -346,6 +342,11 @@ class Election(object):
             margin = vote_counts[0] - vote_counts[1]
             if margin > 1000:
                 self.result.ukip_stealth_targets[cons.name] = margin
+        
+        # Record the winner of each constituency.
+        for const in self.constituencies.keys():
+            self.result.const_winners[const] = (self.constituencies[const].
+                                                                  winning_party)
         
         # Was the vote distribution sufficiently close to the initial support
         # figures?
@@ -404,12 +405,13 @@ class Result(object):
         self.most_votes_party = None
         self.margin_of_victory = 0
         self.most_seats_won = 0
-        self.ukip_seats = 0  
-        self.libdem_seats = 0  
+        self.ukip_seats = []  
+        self.libdem_seats = []  
         self.greens_hold_brighton = False
         self.seat_winner_is_pop_winner = False
         self.ukip_stealth_targets = {}
-        self.possible_coalitions = []   
+        self.possible_coalitions = []  
+        self.const_winners = {} 
         
         # Internal diagnostics
         self.support = None

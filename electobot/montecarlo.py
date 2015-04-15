@@ -13,6 +13,7 @@ import logging
 import copy
 import random
 import multiprocessing
+import csv
 from operator import itemgetter
 
 # Electobot imports
@@ -95,8 +96,11 @@ class MonteCarloResult(object):
         self.greens_hold_brighton_count = 0
         self.seat_winner_is_pop_winner_count = 0
         self.margins_of_victory = []
+        self.ukip_seats = {}
+        self.libdem_seats = {}
         self.ukip_stealth_targets = {}
         self.possible_coalitions = {}
+        self.const_wins = {}
         
         return
     
@@ -133,6 +137,18 @@ class MonteCarloResult(object):
             if result.seat_winner_is_pop_winner:
                 self.seat_winner_is_pop_winner_count += 1
                 
+            for const_name in result.ukip_seats:
+                if const_name not in self.ukip_seats:
+                    self.ukip_seats[const_name] = 1
+                else:
+                    self.ukip_seats[const_name] += 1
+            
+            for const_name in result.libdem_seats:
+                if const_name not in self.libdem_seats:
+                    self.libdem_seats[const_name] = 1
+                else:
+                    self.libdem_seats[const_name] += 1
+            
             for tgt in result.ukip_stealth_targets:
                 if tgt in self.ukip_stealth_targets:
                     self.ukip_stealth_targets[tgt].append(result.
@@ -146,6 +162,15 @@ class MonteCarloResult(object):
                     self.possible_coalitions[coal] += 1
                 else:
                     self.possible_coalitions[coal] = 1
+                    
+            for const in result.const_winners.keys():
+                if const not in self.const_wins:
+                    self.const_wins[const] = {}
+                winner = result.const_winners[const]
+                if winner in self.const_wins[const]:
+                    self.const_wins[const][winner] += 1
+                else:
+                    self.const_wins[const][winner] = 1
                 
         # Calculate the mean and standard deviation of the number of seats for
         # each party.
@@ -156,7 +181,7 @@ class MonteCarloResult(object):
             
         return
     
-    def report(self):
+    def report(self, summary_file=None):
         """Report overall results."""
         
         # Get the mean and standard deviation of the margin of victory.
@@ -216,6 +241,18 @@ class MonteCarloResult(object):
                                                 self.greens_hold_brighton_count,
                                                 self.num_of_results)))
         
+        if len(self.ukip_seats) > 0:
+            print "Most common UKIP wins:"
+        printed = 0
+        for seat in sorted(self.ukip_seats.items(),
+                           key=lambda x: x[1],
+                           reverse=True):
+            if printed >= 20:
+                break
+            print "  {0} (won in {1:.1f}% of simulations)".format(seat[0],
+                                       (float(seat[1])/self.num_of_results)*100)
+            printed += 1
+        
         if len(self.ukip_stealth_targets) > 0:
             print "Most common UKIP stealth targets:"
         for tgt in sorted(self.ukip_stealth_targets.items(),
@@ -224,6 +261,23 @@ class MonteCarloResult(object):
             print "  {0} (mean CON majority {1:.1f})".format(tgt[0],
                                                             (float(sum(tgt[1]))/
                                                             len(tgt[1])))
+            
+        # If requested, save off the summary of who's won each seat.
+        if summary_file is not None:
+            csvfile = open(summary_file, "wb")
+            csvwriter = csv.writer(csvfile)
+            headers = ["Constituency"] + PARTY_NAMES
+            csvwriter.writerow(headers)
+            for const in sorted(self.const_wins.keys()):
+                row = [const]
+                for party in PARTY_NAMES:
+                    if party in self.const_wins[const]:
+                        row.append(self.const_wins[const][party])
+                    else:
+                        row.append(0)
+                csvwriter.writerow(row)
+            csvfile.close()
+            
         
         return
 

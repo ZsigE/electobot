@@ -14,6 +14,7 @@ import cPickle as pickle
 import logging
 import sys
 import datetime
+import gzip
 
 # Electobot imports
 import electobot.election as election
@@ -55,6 +56,11 @@ def run_electobot():
                           help="Filename for saving results data",
                           action="store",
                           dest="savefile")
+    fileopts.add_argument("--summary-file", 
+                          help="Filename for saving summary data",
+                          action="store",
+                          default=None,
+                          dest="summary_file")
     
     simopts = parser.add_argument_group("Simulation options")
     simopts.add_argument("--single-election", "-1",
@@ -218,8 +224,12 @@ def run_electobot():
         # Generating a line chart from saved data.
         assert opts.pickle is not None, "No saved results file specified"
         assert opts.chartloc != "", "No chart filename specified"
-        with open(opts.pickle, "r") as loadfile:
-            savedpolls = pickle.load(loadfile)
+        if opts.pickle.endswith(".gz"):
+            loadfile = gzip.open(opts.pickle, "r")
+        else:
+            loadfile = open(opts.pickle, "r")
+        savedpolls = pickle.load(loadfile)
+        loadfile.close()
         
         # Do the plotting import here to avoid making matplotlib a dependency
         # unless absolutely necessary.
@@ -276,10 +286,14 @@ def run_electobot():
                 iter = opts.iterations
             
             if opts.pickle is not None:
-                with open(opts.pickle, "r") as pickle_file:
-                    saved_polls = pickle.load(pickle_file)
-                    logger.info("Loaded {0} saved polls from file".
-                                format(len(saved_polls)))
+                if opts.pickle.endswith(".gz"):
+                    pickle_file = gzip.open(opts.pickle, "r")
+                else:
+                    pickle_file = open(opts.pickle, "r")
+                saved_polls = pickle.load(pickle_file)
+                logger.info("Loaded {0} saved polls from file".
+                            format(len(saved_polls)))
+                pickle_file.close()
             else:
                 saved_polls = []
                 
@@ -301,7 +315,11 @@ def run_electobot():
                 
                 # Update the saved polls list after every run in case it gets
                 # interrupted.
-                with open(opts.savefile, "w") as pickle_file:
+                if not opts.savefile.endswith(".gz"):
+                    savefile = opts.savefile + ".gz"
+                else:
+                    savefile = opts.savefile
+                with gzip.open(savefile, "wb") as pickle_file:
                     pickle.dump(saved_polls, pickle_file)
             
             logger.info("Completed generating from new polls")
@@ -357,7 +375,7 @@ def run_electobot():
                 assert elect is not None, "No election data to work with"
                 mc_result = montecarlo.run_multithreaded_montecarlo(elect,
                                                                 opts.iterations)
-                mc_result.report()
+                mc_result.report(opts.summary_file)
                 
                 if opts.charttype == "bar":
                     import electobot.electoplot as plot
